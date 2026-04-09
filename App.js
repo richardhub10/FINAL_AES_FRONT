@@ -543,9 +543,17 @@ export default function App() {
         '';
 
       if (!accessToken) {
-        setError(
-          'Login succeeded but no access token was returned by the backend. Check the /api/auth/token/ response and backend configuration.'
-        );
+        const text = typeof res?.data === 'string' ? res.data : '';
+        const looksLikeHtml = /<\s*!doctype\s+html|<\s*html\b/i.test(text);
+        if (looksLikeHtml) {
+          setError(
+            'You are hitting a web page (HTML) instead of the Django API. Fix Railway variable EXPO_PUBLIC_API_BASE_URL to point to the BACKEND domain, then redeploy the frontend.'
+          );
+        } else {
+          setError(
+            'Login request returned no access token. The backend should return JSON like {"access": "...", "refresh": "..."}. Check the /api/auth/token/ response in DevTools.'
+          );
+        }
         return;
       }
 
