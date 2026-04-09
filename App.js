@@ -443,6 +443,16 @@ export default function App() {
     return items;
   }, [staffConfirmedAppointments, selectedDateYmd]);
 
+  const myAppointmentsForSelectedDate = useMemo(() => {
+    const ymd = selectedDateYmd;
+    const items = (appointments || []).filter((appt) => {
+      const apptYmd = typeof appt?.scheduled_for === 'string' ? appt.scheduled_for.slice(0, 10) : '';
+      return apptYmd === ymd;
+    });
+    items.sort((a, b) => String(a?.scheduled_for || '').localeCompare(String(b?.scheduled_for || '')));
+    return items;
+  }, [appointments, selectedDateYmd]);
+
   const staffConfirmedAppointmentsForSelectedDate = staffAppointmentsForSelectedDate;
 
   const selectedHourSlotsLeft = useMemo(() => {
@@ -824,12 +834,18 @@ export default function App() {
     setShowAccounts(true);
   };
 
-  const studentNavKey = showAppointments ? 'appointments' : 'home';
+  const studentNavKey = showAccounts ? 'account' : showAppointments ? 'appointments' : 'home';
   const goStudentHome = () => {
+    setShowAccounts(false);
     setShowAppointments(false);
   };
   const goStudentAppointments = () => {
+    setShowAccounts(false);
     setShowAppointments(true);
+  };
+  const goStudentAccount = () => {
+    setShowAppointments(false);
+    setShowAccounts(true);
   };
 
   return (
@@ -1536,6 +1552,17 @@ export default function App() {
               >
                 <Text style={styles.sidebarNavText}>My Appointments</Text>
               </Pressable>
+              <Pressable
+                onPress={goStudentAccount}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.sidebarNavItem,
+                  studentNavKey === 'account' ? styles.sidebarNavItemActive : null,
+                  pressed ? styles.sidebarNavItemPressed : null,
+                ]}
+              >
+                <Text style={styles.sidebarNavText}>Account</Text>
+              </Pressable>
             </View>
 
             <View style={styles.sidebarActions}>
@@ -1556,12 +1583,12 @@ export default function App() {
             )}
 
             <FadeSlideIn key={screenKey} style={styles.screenWrap}>
-              {!showAccounts ? <AccountDetails me={me} emailFallback={email} /> : null}
-
               {!!token && !me ? (
                 <View style={styles.card}>
                   <Text style={styles.hint}>Loading account…</Text>
                 </View>
+              ) : showAccounts ? (
+                <AccountDetails me={me} emailFallback={email} />
               ) : showAppointments ? (
                 <View style={styles.card}>
                   <Text style={styles.sectionTitle}>My Appointments</Text>
@@ -1657,19 +1684,11 @@ export default function App() {
                   />
                 </View>
               ) : (
-                <View style={styles.card}>
-                  <Text style={styles.sectionTitle}>Create Appointment</Text>
+                <>
+                  <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Schedule</Text>
 
-                  <View style={styles.sectionBlock}>
-                    <View style={styles.sectionHeaderRow}>
-                      <Text style={styles.sectionBlockTitle}>Schedule</Text>
-                      <View style={styles.selectedChip}>
-                        <Text style={styles.selectedChipText}>
-                          {selectedDateYmd} • {selectedTime} UTC
-                        </Text>
-                      </View>
-                    </View>
-
+                    <Text style={styles.label}>Scheduled For</Text>
                     {!!earliestAvailableYmd && (
                       <Text style={styles.hint}>
                         Earliest available appointment: {earliestAvailableYmd}
@@ -1685,28 +1704,45 @@ export default function App() {
                       dailyCapacity={DAILY_CAPACITY}
                     />
 
-                    <Field label="Time (UTC)">
-                      <View style={styles.pickerWrap}>
-                        <Picker
-                          enabled={!busy}
-                          selectedValue={selectedTime}
-                          onValueChange={(v) => setSelectedTime(String(v))}
-                          style={styles.picker}
-                        >
-                          {timeOptionsWithAvailability.map((opt) => (
-                            <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-                          ))}
-                        </Picker>
-                      </View>
-                      <Text style={styles.hint}>Selected: {selectedDateYmd} {selectedTime}</Text>
-                      <Text style={styles.hint}>
-                        Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
-                      </Text>
-                    </Field>
+                    <Text style={styles.label}>Time (UTC)</Text>
+                    <View style={styles.pickerWrap}>
+                      <Picker
+                        enabled={!busy}
+                        selectedValue={selectedTime}
+                        onValueChange={(v) => setSelectedTime(String(v))}
+                        style={styles.picker}
+                      >
+                        {timeOptionsWithAvailability.map((opt) => (
+                          <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                        ))}
+                      </Picker>
+                    </View>
+                    <Text style={styles.hint}>
+                      Selected: {selectedDateYmd} {selectedTime}
+                    </Text>
+                    <Text style={styles.hint}>
+                      Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
+                    </Text>
+
+                    <View style={styles.availabilityList}>
+                      {timeOptions.map((opt) => {
+                        const key = `${selectedDateYmd} ${opt.value}`;
+                        const used = confirmedCountByYmdHour.get(key) || 0;
+                        const statusText = used < HOURLY_CAPACITY ? 'Available' : 'Not available';
+                        return (
+                          <View key={opt.value} style={styles.availabilityRow}>
+                            <Text style={styles.availabilityTime}>{opt.value}</Text>
+                            <Text style={styles.availabilityMeta}>
+                              {statusText} ({used}/{HOURLY_CAPACITY})
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
                   </View>
 
-                  <View style={styles.sectionBlock}>
-                    <Text style={styles.sectionBlockTitle}>Details</Text>
+                  <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Create Appointment</Text>
 
                     <Field label="Reason" hint="Visible only after decrypt (owner/staff).">
                       <TextInput
@@ -1733,15 +1769,45 @@ export default function App() {
                         placeholderTextColor={THEME.colors.muted}
                       />
                     </Field>
+
+                    <UiButton
+                      title="Create"
+                      onPress={createAppointment}
+                      disabled={busy || !scheduledForIso || isWeekendYmd(selectedDateYmd) || selectedHourSlotsLeft <= 0}
+                      variant="primary"
+                    />
                   </View>
 
-                  <UiButton
-                    title="Create"
-                    onPress={createAppointment}
-                    disabled={busy || !scheduledForIso || isWeekendYmd(selectedDateYmd) || selectedHourSlotsLeft <= 0}
-                    variant="primary"
-                  />
-                </View>
+                  <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Appointments on {selectedDateYmd}</Text>
+                    <FlatList
+                      data={myAppointmentsForSelectedDate}
+                      scrollEnabled={false}
+                      keyExtractor={(item) => String(item.id)}
+                      ListEmptyComponent={<Text style={styles.hint}>No appointments for this date.</Text>}
+                      renderItem={({ item }) => (
+                        <View style={styles.item}>
+                          <View style={styles.itemHeaderRow}>
+                            <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
+                            <View
+                              style={[
+                                styles.pill,
+                                String(item.status || '').toLowerCase() === 'confirmed'
+                                  ? styles.pillSuccess
+                                  : String(item.status || '').toLowerCase() === 'cancelled'
+                                    ? styles.pillDanger
+                                    : styles.pillNeutral,
+                              ]}
+                            >
+                              <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
+                            </View>
+                          </View>
+                          <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
+                        </View>
+                      )}
+                    />
+                  </View>
+                </>
               )}
             </FadeSlideIn>
           </ScrollView>
