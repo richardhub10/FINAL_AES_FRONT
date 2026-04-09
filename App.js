@@ -187,18 +187,19 @@ function downloadAppointmentStickerPdf({
 
 const THEME = {
   colors: {
-    bg: '#f5f7fb',
+    // UA website-inspired palette (web.ua.edu.ph)
+    bg: '#fafbfb',
     surface: '#ffffff',
-    text: '#0b1f3b',
-    muted: '#5b6b84',
-    border: '#e5e7eb',
-    borderStrong: '#d1d5db',
-    primary: '#0b3b8c',
+    text: '#070707',
+    muted: '#6e7a84',
+    border: '#e6e9ec',
+    borderStrong: '#a3afb7',
+    primary: '#002366',
     primaryText: '#ffffff',
-    accent: '#f5b301',
+    accent: '#ffbd00',
     dangerBg: '#fdecea',
     dangerBorder: '#f5c2c0',
-    dangerText: '#8a1f17',
+    dangerText: '#ce2029',
     successBg: '#e6f7e6',
     successText: '#14532d',
   },
