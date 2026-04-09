@@ -1,4 +1,10 @@
 # Build the Expo web bundle (dist/) and serve it.
 
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
 [start]
-cmd = "npm run start:railway"
+cmd = "npm run start"
