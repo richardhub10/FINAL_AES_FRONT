@@ -536,8 +536,24 @@ export default function App() {
         email,
         password,
       });
-      setToken(res.data.access);
+
+      // SimpleJWT returns { access, refresh }. Be tolerant of other key names.
+      const accessToken =
+        (res && res.data && (res.data.access || res.data.access_token || res.data.token)) ||
+        '';
+
+      if (!accessToken) {
+        setError(
+          'Login succeeded but no access token was returned by the backend. Check the /api/auth/token/ response and backend configuration.'
+        );
+        return;
+      }
+
+      setToken(accessToken);
       setShowAppointments(false);
+
+      // Immediately load the profile using the fresh token (don’t wait for state).
+      await fetchMe(accessToken);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -545,11 +561,16 @@ export default function App() {
     }
   }
 
-  async function fetchMe() {
+  async function fetchMe(accessOverride) {
     // Fetch the current user's profile/role.
-    if (!token) return;
+    const authToken = accessOverride || token;
+    if (!authToken) return;
     try {
-      const res = await api.get('/api/auth/me/');
+      const res = await api.get('/api/auth/me/', {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
       setMe(res.data);
       // Default landing view per role (only on login/fetchMe).
       setShowAppointments(!!res.data?.is_staff);
