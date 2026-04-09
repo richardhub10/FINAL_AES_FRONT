@@ -451,6 +451,10 @@ export default function App() {
     return Math.max(0, HOURLY_CAPACITY - used);
   }, [confirmedCountByYmdHour, selectedDateYmd, selectedTime, HOURLY_CAPACITY]);
 
+  const selectedHourUsed = useMemo(() => {
+    return Math.max(0, HOURLY_CAPACITY - selectedHourSlotsLeft);
+  }, [HOURLY_CAPACITY, selectedHourSlotsLeft]);
+
   const timeOptionsWithAvailability = useMemo(() => {
     return (timeOptions || []).map((opt) => {
       const key = `${selectedDateYmd} ${opt.value}`;
@@ -1347,20 +1351,19 @@ export default function App() {
                     Selected: {selectedDateYmd} {selectedTime}
                   </Text>
                   <Text style={styles.hint}>
-                    Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourSlotsLeft}/{HOURLY_CAPACITY} slots left)
+                    Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
                   </Text>
 
                   <View style={styles.availabilityList}>
                     {timeOptions.map((opt) => {
                       const key = `${selectedDateYmd} ${opt.value}`;
                       const used = confirmedCountByYmdHour.get(key) || 0;
-                      const left = Math.max(0, HOURLY_CAPACITY - used);
-                      const statusText = left > 0 ? 'Available' : 'Not available';
+                      const statusText = used < HOURLY_CAPACITY ? 'Available' : 'Not available';
                       return (
                         <View key={opt.value} style={styles.availabilityRow}>
                           <Text style={styles.availabilityTime}>{opt.value}</Text>
                           <Text style={styles.availabilityMeta}>
-                            {statusText} ({left}/{HOURLY_CAPACITY})
+                            {statusText} ({used}/{HOURLY_CAPACITY})
                           </Text>
                         </View>
                       );
@@ -1653,7 +1656,7 @@ export default function App() {
                     </View>
                     <Text style={styles.hint}>Selected: {selectedDateYmd} {selectedTime}</Text>
                     <Text style={styles.hint}>
-                      Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourSlotsLeft}/{HOURLY_CAPACITY} slots left)
+                      Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
                     </Text>
                   </Field>
                 </View>
