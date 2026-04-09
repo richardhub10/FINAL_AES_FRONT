@@ -21,9 +21,10 @@
 import axios from 'axios';
 import { StatusBar } from 'expo-status-bar';
 import { jsPDF } from 'jspdf';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Alert,
   Button,
   FlatList,
   Image,
@@ -333,6 +334,9 @@ export default function App() {
   const { width: windowWidth } = useWindowDimensions();
   const isNarrowLayout = windowWidth < 820;
 
+  const apptStatusByIdRef = useRef(new Map());
+  const apptStatusInitializedRef = useRef(false);
+
   // --- Auth/UI mode state -------------------------------------------------
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [showAppointments, setShowAppointments] = useState(false);
@@ -611,19 +615,68 @@ export default function App() {
     }
   }
 
-  async function fetchAppointments() {
+  function showPopup(title, message) {
+    try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert(`${title}\n\n${message}`);
+        return;
+      }
+      Alert.alert(title, message);
+    } catch (e) {
+      // best-effort only
+    }
+  }
+
+  function trackAndMaybeNotifyApproved(nextAppointments, notifyApproved) {
+    if (me?.is_staff) return;
+    const prevMap = apptStatusByIdRef.current;
+    const nextMap = new Map();
+    const approvals = [];
+
+    for (const appt of Array.isArray(nextAppointments) ? nextAppointments : []) {
+      const id = appt?.id;
+      if (id === null || id === undefined) continue;
+      const status = String(appt?.status || '').trim().toLowerCase();
+      nextMap.set(String(id), status);
+
+      if (apptStatusInitializedRef.current) {
+        const prev = prevMap.get(String(id)) || '';
+        if (status === 'confirmed' && prev !== 'confirmed') {
+          approvals.push(appt);
+        }
+      }
+    }
+
+    apptStatusByIdRef.current = nextMap;
+    if (!apptStatusInitializedRef.current) {
+      apptStatusInitializedRef.current = true;
+      return;
+    }
+
+    if (notifyApproved && approvals.length > 0) {
+      const first = approvals[0];
+      const when = typeof first?.scheduled_for === 'string' ? first.scheduled_for : '';
+      showPopup('Appointment approved', when ? `Your appointment was approved.\n\nSchedule: ${when}` : 'Your appointment was approved.');
+    }
+  }
+
+  async function fetchAppointments(options) {
     // Staff: gets all appointments.
     // Student: gets only their own appointments.
     if (!token) return;
-    setBusy(true);
+    const silent = !!options?.silent;
+    const notifyApproved = !!options?.notifyApproved;
+    if (!silent) setBusy(true);
     setError('');
     try {
       const res = await api.get('/api/appointments/');
-      setAppointments(res.data);
+      const next = Array.isArray(res.data) ? res.data : [];
+      trackAndMaybeNotifyApproved(next, notifyApproved);
+      setAppointments(next);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
-      setBusy(false);
+      if (!silent) setBusy(false);
     }
   }
 
@@ -794,6 +847,9 @@ export default function App() {
     setAppointments([]);
     setShowAppointments(false);
     setShowAccounts(false);
+
+    apptStatusByIdRef.current = new Map();
+    apptStatusInitializedRef.current = false;
   }
 
   useEffect(() => {
@@ -801,6 +857,21 @@ export default function App() {
     fetchAppointments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    // Student auto-refresh (polling) to reflect admin approvals in real time.
+    if (!token) return;
+    if (!me) return;
+    if (me?.is_staff) return;
+
+    const intervalMs = 15000;
+    const id = setInterval(() => {
+      fetchAppointments({ silent: true, notifyApproved: true });
+    }, intervalMs);
+
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, me?.is_staff, me?.email]);
 
   useEffect(() => {
     if (me?.is_staff && showAccounts) {
