@@ -22,7 +22,6 @@ import axios from 'axios';
 import { StatusBar } from 'expo-status-bar';
 import { jsPDF } from 'jspdf';
 import { useEffect, useMemo, useState } from 'react';
-import { Picker } from '@react-native-picker/picker';
 import {
   Animated,
   Button,
@@ -1358,41 +1357,23 @@ export default function App() {
                     dailyCapacity={DAILY_CAPACITY}
                   />
 
-                  <Text style={styles.label}>Time (UTC)</Text>
-                  <View style={styles.pickerWrap}>
-                    <Picker
-                      enabled={!busy}
-                      selectedValue={selectedTime}
-                      onValueChange={(v) => setSelectedTime(String(v))}
-                      style={styles.picker}
-                    >
-                      {timeOptionsWithAvailability.map((opt) => (
-                        <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-                      ))}
-                    </Picker>
-                  </View>
+                  <Text style={styles.label}>Time Slots</Text>
+                  <Text style={styles.hint}>Local Time (PHT - Philippines Standard Time)</Text>
+                  <TimeSlotGrid
+                    timeOptions={timeOptions}
+                    selectedDateYmd={selectedDateYmd}
+                    selectedTime={selectedTime}
+                    onSelectTime={setSelectedTime}
+                    confirmedCountByYmdHour={confirmedCountByYmdHour}
+                    capacity={HOURLY_CAPACITY}
+                    busy={busy}
+                  />
                   <Text style={styles.hint}>
                     Selected: {selectedDateYmd} {selectedTime}
                   </Text>
                   <Text style={styles.hint}>
                     Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
                   </Text>
-
-                  <View style={styles.availabilityList}>
-                    {timeOptions.map((opt) => {
-                      const key = `${selectedDateYmd} ${opt.value}`;
-                      const used = confirmedCountByYmdHour.get(key) || 0;
-                      const statusText = used < HOURLY_CAPACITY ? 'Available' : 'Not available';
-                      return (
-                        <View key={opt.value} style={styles.availabilityRow}>
-                          <Text style={styles.availabilityTime}>{opt.value}</Text>
-                          <Text style={styles.availabilityMeta}>
-                            {statusText} ({used}/{HOURLY_CAPACITY})
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
 
                   <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
                     Appointments on {selectedDateYmd}
@@ -1688,6 +1669,8 @@ export default function App() {
                   <View style={styles.card}>
                     <Text style={styles.sectionTitle}>Schedule</Text>
 
+                    <StepHeader step={3} />
+
                     <Text style={styles.label}>Scheduled For</Text>
                     {!!earliestAvailableYmd && (
                       <Text style={styles.hint}>
@@ -1704,41 +1687,23 @@ export default function App() {
                       dailyCapacity={DAILY_CAPACITY}
                     />
 
-                    <Text style={styles.label}>Time (UTC)</Text>
-                    <View style={styles.pickerWrap}>
-                      <Picker
-                        enabled={!busy}
-                        selectedValue={selectedTime}
-                        onValueChange={(v) => setSelectedTime(String(v))}
-                        style={styles.picker}
-                      >
-                        {timeOptionsWithAvailability.map((opt) => (
-                          <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-                        ))}
-                      </Picker>
-                    </View>
+                    <Text style={styles.label}>Time Slots</Text>
+                    <Text style={styles.hint}>Local Time (PHT - Philippines Standard Time)</Text>
+                    <TimeSlotGrid
+                      timeOptions={timeOptions}
+                      selectedDateYmd={selectedDateYmd}
+                      selectedTime={selectedTime}
+                      onSelectTime={setSelectedTime}
+                      confirmedCountByYmdHour={confirmedCountByYmdHour}
+                      capacity={HOURLY_CAPACITY}
+                      busy={busy}
+                    />
                     <Text style={styles.hint}>
                       Selected: {selectedDateYmd} {selectedTime}
                     </Text>
                     <Text style={styles.hint}>
                       Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
                     </Text>
-
-                    <View style={styles.availabilityList}>
-                      {timeOptions.map((opt) => {
-                        const key = `${selectedDateYmd} ${opt.value}`;
-                        const used = confirmedCountByYmdHour.get(key) || 0;
-                        const statusText = used < HOURLY_CAPACITY ? 'Available' : 'Not available';
-                        return (
-                          <View key={opt.value} style={styles.availabilityRow}>
-                            <Text style={styles.availabilityTime}>{opt.value}</Text>
-                            <Text style={styles.availabilityMeta}>
-                              {statusText} ({used}/{HOURLY_CAPACITY})
-                            </Text>
-                          </View>
-                        );
-                      })}
-                    </View>
                   </View>
 
                   <View style={styles.card}>
@@ -2015,6 +1980,79 @@ function formatTimeLabel(hhmm) {
   return `${hour12}:${mm || '00'} ${ampm}`;
 }
 
+function TimeSlotGrid({
+  timeOptions,
+  selectedDateYmd,
+  selectedTime,
+  onSelectTime,
+  confirmedCountByYmdHour,
+  capacity,
+  busy,
+}) {
+  return (
+    <View style={styles.timeSlotsWrap}>
+      {(timeOptions || []).map((opt) => {
+        const key = `${selectedDateYmd} ${opt.value}`;
+        const used = confirmedCountByYmdHour.get(key) || 0;
+        const left = Math.max(0, capacity - used);
+        const disabled = busy || left <= 0;
+        const isSelected = String(selectedTime) === String(opt.value);
+
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => onSelectTime(String(opt.value))}
+            disabled={disabled}
+            style={({ pressed }) => [
+              styles.timeSlotBtn,
+              isSelected ? styles.timeSlotBtnSelected : null,
+              disabled ? styles.timeSlotBtnDisabled : null,
+              pressed && !disabled ? styles.timeSlotBtnPressed : null,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Time slot ${formatTimeLabel(opt.value)}`}
+          >
+            <Text
+              style={[
+                styles.timeSlotText,
+                isSelected ? styles.timeSlotTextSelected : null,
+                disabled ? styles.timeSlotTextDisabled : null,
+              ]}
+            >
+              {formatTimeLabel(opt.value)}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function StepHeader({ step = 1 }) {
+  // step: 1=date, 2=time, 3=review
+  return (
+    <View style={styles.stepHeaderRow}>
+      <View style={[styles.stepChip, step >= 1 ? styles.stepChipActive : null]}>
+        <Text style={[styles.stepChipText, step >= 1 ? styles.stepChipTextActive : null]}>
+          Select Date
+        </Text>
+      </View>
+      <Text style={styles.stepArrow}>→</Text>
+      <View style={[styles.stepChip, step >= 2 ? styles.stepChipActive : null]}>
+        <Text style={[styles.stepChipText, step >= 2 ? styles.stepChipTextActive : null]}>
+          Select Time
+        </Text>
+      </View>
+      <Text style={styles.stepArrow}>→</Text>
+      <View style={[styles.stepChip, step >= 3 ? styles.stepChipActive : null]}>
+        <Text style={[styles.stepChipText, step >= 3 ? styles.stepChipTextActive : null]}>
+          Review & Confirm
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -2269,7 +2307,7 @@ const styles = StyleSheet.create({
   sidebar: {
     width: 270,
     padding: 14,
-    backgroundColor: THEME.colors.surface,
+    backgroundColor: THEME.colors.primary,
     borderRightWidth: 1,
     borderRightColor: THEME.colors.border,
   },
@@ -2303,14 +2341,15 @@ const styles = StyleSheet.create({
   },
   sidebarTitle: {
     fontWeight: '900',
-    color: THEME.colors.text,
+    color: THEME.colors.primaryText,
     letterSpacing: 0.2,
   },
   sidebarSub: {
     marginTop: 2,
-    color: THEME.colors.muted,
+    color: THEME.colors.primaryText,
     fontWeight: '700',
     fontSize: 12,
+    opacity: 0.9,
   },
   sidebarUserCard: {
     marginTop: 12,
@@ -2441,16 +2480,6 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.surface,
     color: THEME.colors.text,
   },
-  pickerWrap: {
-    borderWidth: 1,
-    borderColor: THEME.colors.borderStrong,
-    borderRadius: THEME.radius.sm,
-    overflow: 'hidden',
-    backgroundColor: THEME.colors.surface,
-  },
-  picker: {
-    height: 44,
-  },
   hint: {
     marginTop: 6,
     color: THEME.colors.muted,
@@ -2578,6 +2607,79 @@ const styles = StyleSheet.create({
   availabilityMeta: {
     color: THEME.colors.muted,
     fontWeight: '700',
+  },
+
+  // --- Schedule (time slots + steps) -------------------------------------
+  stepHeaderRow: {
+    marginTop: 6,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  stepChip: {
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.surface,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  stepChipActive: {
+    borderColor: THEME.colors.primary,
+  },
+  stepChipText: {
+    fontWeight: '900',
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: THEME.colors.muted,
+  },
+  stepChipTextActive: {
+    color: THEME.colors.text,
+  },
+  stepArrow: {
+    fontWeight: '900',
+    color: THEME.colors.muted,
+  },
+  timeSlotsWrap: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  timeSlotBtn: {
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.surface,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timeSlotBtnSelected: {
+    backgroundColor: THEME.colors.primary,
+    borderColor: THEME.colors.primary,
+  },
+  timeSlotBtnDisabled: {
+    opacity: 0.45,
+  },
+  timeSlotBtnPressed: {
+    opacity: 0.92,
+  },
+  timeSlotText: {
+    fontWeight: '900',
+    letterSpacing: 0.2,
+    color: THEME.colors.text,
+  },
+  timeSlotTextSelected: {
+    color: THEME.colors.primaryText,
+  },
+  timeSlotTextDisabled: {
+    color: THEME.colors.muted,
   },
   errorBox: {
     marginTop: 8,
