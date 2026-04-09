@@ -332,6 +332,8 @@ export default function App() {
   const [showAppointments, setShowAppointments] = useState(false);
   const [showAccounts, setShowAccounts] = useState(false);
 
+  const [rememberMe, setRememberMe] = useState(true);
+
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
 
@@ -771,6 +773,7 @@ export default function App() {
     setMe(null);
     setAppointments([]);
     setShowAppointments(false);
+    setShowAccounts(false);
   }
 
   useEffect(() => {
@@ -802,655 +805,532 @@ export default function App() {
     ? `auth:${mode}`
     : `app:${me?.is_staff ? 'staff' : 'student'}:${me?.is_staff ? (showAccounts ? 'accounts' : showAppointments ? 'list' : 'create') : (showAppointments ? 'list' : 'create')}`;
 
+  const isStaff = !!me?.is_staff;
+  const staffNavKey = showAccounts ? 'accounts' : showAppointments ? 'appointments' : 'home';
+  const goStaffHome = () => {
+    setShowAccounts(false);
+    setShowAppointments(false);
+  };
+  const goStaffAppointments = () => {
+    setShowAccounts(false);
+    setShowAppointments(true);
+  };
+  const goStaffAccounts = () => {
+    setShowAppointments(false);
+    setShowAccounts(true);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-      <View style={styles.header}>
-        <View style={styles.brandBar}>
-          <View style={styles.brandLeft}>
-            {UA_LOGO_URI ? (
-              <Image
-                source={{ uri: UA_LOGO_URI }}
-                style={styles.brandLogo}
-                resizeMode="contain"
-                accessibilityLabel="University of the Assumption logo"
-              />
-            ) : (
-              <View style={styles.brandLogoFallback}>
-                <Text style={styles.brandLogoFallbackText}>UA</Text>
+      {!token ? (
+        <View style={styles.authShell}>
+          <View style={styles.authBg}>
+            <View style={[styles.authBlob, styles.authBlobOne]} />
+            <View style={[styles.authBlob, styles.authBlobTwo]} />
+            <View style={[styles.authBlob, styles.authBlobThree]} />
+
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.authContainer}
+              keyboardShouldPersistTaps="handled"
+            >
+              {!!error && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <FadeSlideIn key={screenKey} style={styles.authCard}>
+                <View style={styles.glassOverlay} />
+
+                <View style={styles.authBrandRow}>
+                  {UA_LOGO_URI ? (
+                    <Image
+                      source={{ uri: UA_LOGO_URI }}
+                      style={styles.authBrandLogo}
+                      resizeMode="contain"
+                      accessibilityLabel="University of the Assumption logo"
+                    />
+                  ) : (
+                    <View style={styles.authBrandLogoFallback}>
+                      <Text style={styles.authBrandLogoFallbackText}>UA</Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.authBrandTitle}>University of the Assumption</Text>
+                    <Text style={styles.authBrandSub}>University Clinic • Appointment System</Text>
+                  </View>
+                </View>
+
+                <View style={styles.authTabsRow}>
+                  <Pressable
+                    onPress={() => setMode('login')}
+                    disabled={busy}
+                    style={({ pressed }) => [
+                      styles.authTab,
+                      mode === 'login' ? styles.authTabActive : null,
+                      pressed ? styles.authTabPressed : null,
+                    ]}
+                  >
+                    <Text style={[styles.authTabText, mode === 'login' ? styles.authTabTextActive : null]}>Login</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setMode('register')}
+                    disabled={busy}
+                    style={({ pressed }) => [
+                      styles.authTab,
+                      mode === 'register' ? styles.authTabActive : null,
+                      pressed ? styles.authTabPressed : null,
+                    ]}
+                  >
+                    <Text style={[styles.authTabText, mode === 'register' ? styles.authTabTextActive : null]}>Register</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.authHeading}>{mode === 'login' ? 'LOGIN' : 'REGISTER'}</Text>
+                <Text style={styles.authSubHeading}>
+                  {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
+                </Text>
+
+                <Field label="Email">
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={[styles.input, styles.authInput]}
+                    placeholder="you@ua.edu.ph"
+                    placeholderTextColor={THEME.colors.muted}
+                  />
+                </Field>
+
+                <Field label="Password">
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    style={[styles.input, styles.authInput]}
+                    placeholder="••••••••"
+                    placeholderTextColor={THEME.colors.muted}
+                  />
+                </Field>
+
+                {mode === 'login' ? (
+                  <View style={styles.authMetaRow}>
+                    <Pressable
+                      onPress={() => setRememberMe((v) => !v)}
+                      disabled={busy}
+                      style={({ pressed }) => [styles.rememberRow, pressed ? styles.rememberPressed : null]}
+                    >
+                      <View style={[styles.checkbox, rememberMe ? styles.checkboxChecked : null]}>
+                        {rememberMe ? <Text style={styles.checkboxTick}>✓</Text> : null}
+                      </View>
+                      <Text style={styles.rememberText}>Remember me</Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setError('Please contact the clinic staff to reset your password.')}
+                      disabled={busy}
+                      style={({ pressed }) => [pressed ? styles.authLinkPressed : null]}
+                    >
+                      <Text style={styles.authLink}>Forgot Password?</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+
+                {mode === 'register' && (
+                  <>
+                    <View style={styles.grid2}>
+                      <View style={styles.gridCol}>
+                        <Field label="First Name">
+                          <TextInput
+                            value={firstName}
+                            onChangeText={setFirstName}
+                            style={[styles.input, styles.authInput]}
+                            placeholder="First name"
+                            placeholderTextColor={THEME.colors.muted}
+                          />
+                        </Field>
+                      </View>
+                      <View style={styles.gridCol}>
+                        <Field label="Last Name">
+                          <TextInput
+                            value={lastName}
+                            onChangeText={setLastName}
+                            style={[styles.input, styles.authInput]}
+                            placeholder="Last name"
+                            placeholderTextColor={THEME.colors.muted}
+                          />
+                        </Field>
+                      </View>
+                    </View>
+
+                    <View style={styles.grid2}>
+                      <View style={styles.gridCol}>
+                        <Field label="Birthday" hint="Format: YYYY-MM-DD">
+                          <TextInput
+                            value={birthday}
+                            onChangeText={setBirthday}
+                            autoCapitalize="none"
+                            style={[styles.input, styles.authInput]}
+                            placeholder="2000-01-31"
+                            placeholderTextColor={THEME.colors.muted}
+                          />
+                        </Field>
+                      </View>
+                      <View style={styles.gridCol}>
+                        <Field label="School ID">
+                          <TextInput
+                            value={schoolId}
+                            onChangeText={setSchoolId}
+                            autoCapitalize="characters"
+                            style={[styles.input, styles.authInput]}
+                            placeholder="UA-XXXXXX"
+                            placeholderTextColor={THEME.colors.muted}
+                          />
+                        </Field>
+                      </View>
+                    </View>
+
+                    <Field label="Contact Number">
+                      <TextInput
+                        value={contactNumber}
+                        onChangeText={setContactNumber}
+                        autoCapitalize="none"
+                        keyboardType={Platform.OS === 'web' ? 'tel' : 'phone-pad'}
+                        style={[styles.input, styles.authInput]}
+                        placeholder="09xxxxxxxxx"
+                        placeholderTextColor={THEME.colors.muted}
+                      />
+                    </Field>
+                  </>
+                )}
+
+                <View style={styles.formActions}>
+                  <UiButton
+                    title={mode === 'login' ? 'Sign in' : 'Create account'}
+                    onPress={mode === 'login' ? onLogin : onRegister}
+                    disabled={
+                      busy ||
+                      !email ||
+                      !password ||
+                      (mode === 'register' &&
+                        (!firstName || !lastName || !birthday || !schoolId || !contactNumber))
+                    }
+                    variant="primary"
+                  />
+                </View>
+              </FadeSlideIn>
+            </ScrollView>
+          </View>
+        </View>
+      ) : isStaff ? (
+        <View style={styles.staffShell}>
+          <View style={styles.sidebar}>
+            <View style={styles.sidebarBrandRow}>
+              {UA_LOGO_URI ? (
+                <Image
+                  source={{ uri: UA_LOGO_URI }}
+                  style={styles.sidebarLogo}
+                  resizeMode="contain"
+                  accessibilityLabel="University of the Assumption logo"
+                />
+              ) : (
+                <View style={styles.sidebarLogoFallback}>
+                  <Text style={styles.sidebarLogoFallbackText}>UA</Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sidebarTitle}>UA Clinic</Text>
+                <Text style={styles.sidebarSub}>Staff Dashboard</Text>
+              </View>
+            </View>
+
+            <View style={styles.sidebarUserCard}>
+              <Text style={styles.sidebarUserName}>
+                {`${me?.first_name || ''} ${me?.last_name || ''}`.trim() || me?.email || 'Staff'}
+              </Text>
+              <Text style={styles.sidebarUserMeta}>{me?.email || email || '—'}</Text>
+              <View style={styles.sidebarPillsRow}>
+                <View style={[styles.pill, styles.pillNeutral]}>
+                  <Text style={styles.pillText}>STAFF</Text>
+                </View>
+                {staffNavKey === 'accounts' ? (
+                  <View style={[styles.pill, styles.pillNeutral]}>
+                    <Text style={styles.pillText}>ACCOUNTS</Text>
+                  </View>
+                ) : staffNavKey === 'appointments' ? (
+                  <View style={[styles.pill, styles.pillNeutral]}>
+                    <Text style={styles.pillText}>APPOINTMENTS</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.pill, styles.pillNeutral]}>
+                    <Text style={styles.pillText}>SCHEDULE</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.sidebarNav}>
+              <Pressable
+                onPress={goStaffHome}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.sidebarNavItem,
+                  staffNavKey === 'home' ? styles.sidebarNavItemActive : null,
+                  pressed ? styles.sidebarNavItemPressed : null,
+                ]}
+              >
+                <Text style={styles.sidebarNavText}>Home</Text>
+              </Pressable>
+              <Pressable
+                onPress={goStaffAppointments}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.sidebarNavItem,
+                  staffNavKey === 'appointments' ? styles.sidebarNavItemActive : null,
+                  pressed ? styles.sidebarNavItemPressed : null,
+                ]}
+              >
+                <Text style={styles.sidebarNavText}>Appointments</Text>
+              </Pressable>
+              <Pressable
+                onPress={goStaffAccounts}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.sidebarNavItem,
+                  staffNavKey === 'accounts' ? styles.sidebarNavItemActive : null,
+                  pressed ? styles.sidebarNavItemPressed : null,
+                ]}
+              >
+                <Text style={styles.sidebarNavText}>Accounts</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.sidebarActions}>
+              <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
+              <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
+            </View>
+          </View>
+
+          <ScrollView
+            style={styles.staffScroll}
+            contentContainerStyle={styles.staffContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {!!error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-            <View style={styles.brandTextWrap}>
-              <Text style={styles.title}>University of the Assumption</Text>
-              <Text style={styles.subtitle}>University Clinic • Appointment System</Text>
-            </View>
-          </View>
-        </View>
-      </View>
 
-      {!!error && (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      <FadeSlideIn key={screenKey} style={styles.screenWrap}>
-      {!token ? (
-        <View style={styles.card}>
-          <View style={styles.segmentRow}>
-            <UiButton
-              title="Login"
-              onPress={() => setMode('login')}
-              disabled={busy}
-              variant={mode === 'login' ? 'primary' : 'secondary'}
-              style={styles.segmentBtn}
-            />
-            <UiButton
-              title="Register"
-              onPress={() => setMode('register')}
-              disabled={busy}
-              variant={mode === 'register' ? 'primary' : 'secondary'}
-              style={styles.segmentBtn}
-            />
-          </View>
-
-          <Field label="Email">
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              style={styles.input}
-              placeholder="you@ua.edu.ph"
-              placeholderTextColor={THEME.colors.muted}
-            />
-          </Field>
-
-          <Field label="Password">
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={THEME.colors.muted}
-            />
-          </Field>
-
-          {mode === 'register' && (
-            <>
-              <View style={styles.grid2}>
-                <View style={styles.gridCol}>
-                  <Field label="First Name">
-                    <TextInput
-                      value={firstName}
-                      onChangeText={setFirstName}
-                      style={styles.input}
-                      placeholder="First name"
-                      placeholderTextColor={THEME.colors.muted}
-                    />
-                  </Field>
+            <FadeSlideIn key={screenKey} style={styles.screenWrap}>
+              {!!token && !me ? (
+                <View style={styles.card}>
+                  <Text style={styles.hint}>Loading account…</Text>
                 </View>
-                <View style={styles.gridCol}>
-                  <Field label="Last Name">
-                    <TextInput
-                      value={lastName}
-                      onChangeText={setLastName}
-                      style={styles.input}
-                      placeholder="Last name"
-                      placeholderTextColor={THEME.colors.muted}
-                    />
-                  </Field>
-                </View>
-              </View>
+              ) : showAccounts ? (
+                <View style={styles.card}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionTitle}>Registered Accounts</Text>
+                    <UiButton title="Reload" onPress={fetchAccounts} disabled={busy} variant="ghost" />
+                  </View>
 
-              <View style={styles.grid2}>
-                <View style={styles.gridCol}>
-                  <Field label="Birthday" hint="Format: YYYY-MM-DD">
-                    <TextInput
-                      value={birthday}
-                      onChangeText={setBirthday}
-                      autoCapitalize="none"
-                      style={styles.input}
-                      placeholder="2000-01-31"
-                      placeholderTextColor={THEME.colors.muted}
-                    />
-                  </Field>
-                </View>
-                <View style={styles.gridCol}>
-                  <Field label="School ID">
-                    <TextInput
-                      value={schoolId}
-                      onChangeText={setSchoolId}
-                      autoCapitalize="characters"
-                      style={styles.input}
-                      placeholder="UA-XXXXXX"
-                      placeholderTextColor={THEME.colors.muted}
-                    />
-                  </Field>
-                </View>
-              </View>
-
-              <Field label="Contact Number">
-                <TextInput
-                  value={contactNumber}
-                  onChangeText={setContactNumber}
-                  autoCapitalize="none"
-                  keyboardType={Platform.OS === 'web' ? 'tel' : 'phone-pad'}
-                  style={styles.input}
-                  placeholder="09xxxxxxxxx"
-                  placeholderTextColor={THEME.colors.muted}
-                />
-              </Field>
-            </>
-          )}
-
-          <View style={styles.formActions}>
-            <UiButton
-              title={mode === 'login' ? 'Sign in' : 'Create account'}
-              onPress={mode === 'login' ? onLogin : onRegister}
-              disabled={
-                busy ||
-                !email ||
-                !password ||
-                (mode === 'register' &&
-                  (!firstName || !lastName || !birthday || !schoolId || !contactNumber))
-              }
-              variant="primary"
-            />
-          </View>
-        </View>
-      ) : (
-        <>
-          <View style={styles.topBar}>
-            <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
-            <UiButton
-              title={me?.is_staff ? (showAppointments ? 'Schedule' : 'Appointments') : (showAppointments ? 'Create' : 'My Appointments')}
-              onPress={() => {
-                setShowAccounts(false);
-                setShowAppointments((v) => !v);
-              }}
-              disabled={busy}
-              variant="primary"
-            />
-            {me?.is_staff ? (
-              <UiButton
-                title="Accounts"
-                onPress={() => {
-                  setShowAppointments(false);
-                  setShowAccounts(true);
-                }}
-                disabled={busy}
-                variant="secondary"
-              />
-            ) : null}
-            <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
-          </View>
-
-          {!showAccounts ? <AccountDetails me={me} emailFallback={email} /> : null}
-
-          {!!token && !me ? (
-            <View style={styles.card}>
-              <Text style={styles.hint}>Loading account…</Text>
-            </View>
-          ) : me?.is_staff ? (
-            showAccounts ? (
-              <View style={styles.card}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Registered Accounts</Text>
-                  <UiButton title="Reload" onPress={fetchAccounts} disabled={busy} variant="ghost" />
-                </View>
-
-                <FlatList
-                  data={accounts}
-                  scrollEnabled={false}
-                  keyExtractor={(item) => String(item.id)}
-                  ListEmptyComponent={<Text style={styles.hint}>No accounts found.</Text>}
-                  renderItem={({ item }) => {
-                    const isActive = !!item?.is_active;
-                    const isStaff = !!item?.is_staff;
-                    const isSelf = item?.id === me?.id;
-                    const fullName = `${item?.first_name || ''} ${item?.last_name || ''}`.trim();
-                    const subtitle = fullName || item?.email || item?.username || '—';
-                    const roleLabel = isStaff ? 'STAFF' : 'STUDENT';
-                    const statusLabel = isActive ? 'ACTIVE' : 'DISABLED';
-
-                    return (
-                      <View style={styles.item}>
-                        <View style={styles.itemHeaderRow}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.itemTitle}>{subtitle}</Text>
-                            <Text style={styles.itemMeta}>{item?.username || ''}</Text>
-                          </View>
-                          <View style={styles.pillsRow}>
-                            <View style={[styles.pill, styles.pillNeutral]}>
-                              <Text style={styles.pillText}>{roleLabel}</Text>
-                            </View>
-                            {isSelf ? (
-                              <View style={[styles.pill, styles.pillNeutral]}>
-                                <Text style={styles.pillText}>YOU</Text>
-                              </View>
-                            ) : null}
-                            <View
-                              style={[
-                                styles.pill,
-                                isActive ? styles.pillSuccess : styles.pillDanger,
-                              ]}
-                            >
-                              <Text style={styles.pillText}>{statusLabel}</Text>
-                            </View>
-                          </View>
-                        </View>
-
-                        <View style={styles.accountRow}>
-                          <View style={styles.accountMiniCell}>
-                            <Text style={styles.accountLabel}>School ID</Text>
-                            <Text style={styles.accountValue}>{item?.school_id || '—'}</Text>
-                          </View>
-                          <View style={styles.accountMiniCell}>
-                            <Text style={styles.accountLabel}>Contact</Text>
-                            <Text style={styles.accountValue}>{item?.contact_number || '—'}</Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.actionRow}>
-                          {isActive ? (
-                            <UiButton
-                              title="Disable"
-                              onPress={() => setAccountActive(item.id, false)}
-                              disabled={busy || isSelf}
-                              variant="secondary"
-                            />
-                          ) : (
-                            <UiButton
-                              title="Enable"
-                              onPress={() => setAccountActive(item.id, true)}
-                              disabled={busy || isSelf}
-                              variant="primary"
-                            />
-                          )}
-                        </View>
-                      </View>
-                    );
-                  }}
-                />
-              </View>
-            ) : (
-            showAppointments ? (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Appointments</Text>
-                <FlatList
-                  data={staffInboxAppointments}
-                  scrollEnabled={false}
-                  keyExtractor={(item) => String(item.id)}
-                  ListEmptyComponent={<Text style={styles.hint}>No pending appointments.</Text>}
-                  renderItem={({ item }) => (
-                    <View style={styles.item}>
-                      <View style={styles.itemHeaderRow}>
-                        <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
-                        <View
-                          style={[
-                            styles.pill,
-                            String(item.status || '').toLowerCase() === 'confirmed'
-                              ? styles.pillSuccess
-                              : String(item.status || '').toLowerCase() === 'cancelled'
-                                ? styles.pillDanger
-                                : styles.pillNeutral,
-                          ]}
-                        >
-                          <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
-                        </View>
-                      </View>
-                      <Text style={styles.itemMeta}>
-                        Patient: {item.patient_full_name || '—'}
-                        {item.patient_age !== null && item.patient_age !== undefined
-                          ? ` (Age: ${item.patient_age})`
-                          : ''}
-                      </Text>
-                      <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
-                      <Text style={styles.hint}>
-                        Slots left this hour: {slotsLeftForIso(item.scheduled_for)}/{HOURLY_CAPACITY}
-                      </Text>
-
-                      {(() => {
-                        const dec = decryptedById.get(item.id);
-                        const reasonText = dec ? dec.reason : item.reason;
-                        const notesText = dec ? dec.notes : item.notes;
-
-                        return (
-                          <>
-                            {!!reasonText && (
-                              <Text style={styles.itemBody}>
-                                Reason: {reasonText}
-                                {!dec ? ' (encrypted)' : ''}
-                              </Text>
-                            )}
-                            {!!notesText && (
-                              <Text style={styles.itemBody}>
-                                Notes: {notesText}
-                                {!dec ? ' (encrypted)' : ''}
-                              </Text>
-                            )}
-
-                            <View style={styles.actionRow}>
-                              <View style={styles.actionBtn}>
-                                {!dec ? (
-                                  <UiButton
-                                    title="Decrypt"
-                                    onPress={() => decryptAppointment(item.id)}
-                                    disabled={busy}
-                                    variant="secondary"
-                                  />
-                                ) : (
-                                  <UiButton
-                                    title="Hide"
-                                    onPress={() => hideDecrypted(item.id)}
-                                    disabled={busy}
-                                    variant="ghost"
-                                  />
-                                )}
-                              </View>
-
-                              <View style={styles.actionBtn}>
-                                <UiButton
-                                  title="Confirm"
-                                  onPress={() => setAppointmentStatus(item.id, 'confirmed')}
-                                  disabled={busy || slotsLeftForIso(item.scheduled_for) <= 0}
-                                  variant="primary"
-                                />
-                              </View>
-
-                              <View style={styles.actionBtn}>
-                                <UiButton
-                                  title="Cancel"
-                                  onPress={() => setAppointmentStatus(item.id, 'cancelled')}
-                                  disabled={busy}
-                                  variant="secondary"
-                                />
-                              </View>
-                            </View>
-                          </>
-                        );
-                      })()}
-                    </View>
-                  )}
-                />
-              </View>
-            ) : (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Schedule</Text>
-
-                <Text style={styles.label}>Scheduled For</Text>
-                {!!earliestAvailableYmd && (
-                  <Text style={styles.hint}>
-                    Earliest available appointment: {earliestAvailableYmd}
-                  </Text>
-                )}
-
-                <Calendar
-                  cursor={calendarCursor}
-                  onChangeCursor={setCalendarCursor}
-                  selectedDateYmd={selectedDateYmd}
-                  onSelectDateYmd={setSelectedDateYmd}
-                  bookedCountByDate={bookedCountByDateConfirmed}
-                  dailyCapacity={DAILY_CAPACITY}
-                />
-
-                <Text style={styles.label}>Time (UTC)</Text>
-                <View style={styles.pickerWrap}>
-                  <Picker
-                    enabled={!busy}
-                    selectedValue={selectedTime}
-                    onValueChange={(v) => setSelectedTime(String(v))}
-                    style={styles.picker}
-                  >
-                    {timeOptionsWithAvailability.map((opt) => (
-                      <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-                    ))}
-                  </Picker>
-                </View>
-                <Text style={styles.hint}>
-                  Selected: {selectedDateYmd} {selectedTime}
-                </Text>
-                <Text style={styles.hint}>
-                  Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourSlotsLeft}/{HOURLY_CAPACITY} slots left)
-                </Text>
-
-                <View style={styles.availabilityList}>
-                  {timeOptions.map((opt) => {
-                    const key = `${selectedDateYmd} ${opt.value}`;
-                    const used = confirmedCountByYmdHour.get(key) || 0;
-                    const left = Math.max(0, HOURLY_CAPACITY - used);
-                    const statusText = left > 0 ? 'Available' : 'Not available';
-                    return (
-                      <View key={opt.value} style={styles.availabilityRow}>
-                        <Text style={styles.availabilityTime}>{opt.value}</Text>
-                        <Text style={styles.availabilityMeta}>
-                          {statusText} ({left}/{HOURLY_CAPACITY})
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-
-                <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
-                  Appointments on {selectedDateYmd}
-                </Text>
-                <FlatList
-                  data={staffConfirmedAppointmentsForSelectedDate}
-                  scrollEnabled={false}
-                  keyExtractor={(item) => String(item.id)}
-                  ListEmptyComponent={<Text style={styles.hint}>No confirmed appointments for this date.</Text>}
-                  renderItem={({ item }) => (
-                    <View style={styles.item}>
-                      <View style={styles.itemHeaderRow}>
-                        <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
-                        <View
-                          style={[
-                            styles.pill,
-                            String(item.status || '').toLowerCase() === 'confirmed'
-                              ? styles.pillSuccess
-                              : String(item.status || '').toLowerCase() === 'cancelled'
-                                ? styles.pillDanger
-                                : styles.pillNeutral,
-                          ]}
-                        >
-                          <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
-                        </View>
-                      </View>
-                      <Text style={styles.itemMeta}>
-                        Patient: {item.patient_full_name || '—'}
-                        {item.patient_age !== null && item.patient_age !== undefined
-                          ? ` (Age: ${item.patient_age})`
-                          : ''}
-                      </Text>
-                      <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
-
-                      {(() => {
-                        const dec = decryptedById.get(item.id);
-                        const reasonText = dec ? dec.reason : item.reason;
-                        const notesText = dec ? dec.notes : item.notes;
-
-                        return (
-                          <>
-                            {!!reasonText && (
-                              <Text style={styles.itemBody}>
-                                Reason: {reasonText}
-                                {!dec ? ' (encrypted)' : ''}
-                              </Text>
-                            )}
-                            {!!notesText && (
-                              <Text style={styles.itemBody}>
-                                Notes: {notesText}
-                                {!dec ? ' (encrypted)' : ''}
-                              </Text>
-                            )}
-
-                            <View style={styles.actionRow}>
-                              <View style={styles.actionBtn}>
-                                {!dec ? (
-                                  <UiButton
-                                    title="Decrypt"
-                                    onPress={() => decryptAppointment(item.id)}
-                                    disabled={busy}
-                                    variant="secondary"
-                                  />
-                                ) : (
-                                  <UiButton
-                                    title="Hide"
-                                    onPress={() => hideDecrypted(item.id)}
-                                    disabled={busy}
-                                    variant="ghost"
-                                  />
-                                )}
-                              </View>
-
-                              <View style={styles.actionBtn}>
-                                <UiButton
-                                  title="Cancel"
-                                  onPress={() => setAppointmentStatus(item.id, 'cancelled')}
-                                  disabled={busy}
-                                  variant="secondary"
-                                />
-                              </View>
-                            </View>
-                          </>
-                        );
-                      })()}
-                    </View>
-                  )}
-                />
-              </View>
-            )
-            )
-          ) : showAppointments ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>My Appointments</Text>
-              <FlatList
-                data={appointments}
-                scrollEnabled={false}
-                keyExtractor={(item) => String(item.id)}
-                ListEmptyComponent={<Text style={styles.hint}>No appointments yet.</Text>}
-                renderItem={({ item }) => (
-                  <View style={styles.item}>
-                    <View style={styles.itemHeaderRow}>
-                      <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
-                      <View
-                        style={[
-                          styles.pill,
-                          String(item.status || '').toLowerCase() === 'confirmed'
-                            ? styles.pillSuccess
-                            : String(item.status || '').toLowerCase() === 'cancelled'
-                              ? styles.pillDanger
-                              : styles.pillNeutral,
-                        ]}
-                      >
-                        <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
-
-                    {(() => {
-                      const dec = decryptedById.get(item.id);
-                      const reasonText = dec ? dec.reason : item.reason;
-                      const notesText = dec ? dec.notes : item.notes;
-                      const isConfirmed = String(item.status || '').toLowerCase() === 'confirmed';
+                  <FlatList
+                    data={accounts}
+                    scrollEnabled={false}
+                    keyExtractor={(item) => String(item.id)}
+                    ListEmptyComponent={<Text style={styles.hint}>No accounts found.</Text>}
+                    renderItem={({ item }) => {
+                      const isActive = !!item?.is_active;
+                      const isStaffRole = !!item?.is_staff;
+                      const isSelf = item?.id === me?.id;
+                      const fullName = `${item?.first_name || ''} ${item?.last_name || ''}`.trim();
+                      const subtitle = fullName || item?.email || item?.username || '—';
+                      const roleLabel = isStaffRole ? 'STAFF' : 'STUDENT';
+                      const statusLabel = isActive ? 'ACTIVE' : 'DISABLED';
 
                       return (
-                        <>
-                          {!!reasonText && (
-                            <Text style={styles.itemBody}>
-                              Reason: {reasonText}
-                              {!dec ? ' (encrypted)' : ''}
-                            </Text>
-                          )}
-                          {!!notesText && (
-                            <Text style={styles.itemBody}>
-                              Notes: {notesText}
-                              {!dec ? ' (encrypted)' : ''}
-                            </Text>
-                          )}
-
-                          <View style={styles.actionRow}>
-                            <View style={styles.actionBtn}>
-                              {!dec ? (
-                                <UiButton
-                                  title="Decrypt"
-                                  onPress={() => decryptAppointment(item.id)}
-                                  disabled={busy}
-                                  variant="secondary"
-                                />
-                              ) : (
-                                <UiButton
-                                  title="Hide"
-                                  onPress={() => hideDecrypted(item.id)}
-                                  disabled={busy}
-                                  variant="ghost"
-                                />
-                              )}
+                        <View style={styles.item}>
+                          <View style={styles.itemHeaderRow}>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.itemTitle}>{subtitle}</Text>
+                              <Text style={styles.itemMeta}>{item?.username || ''}</Text>
                             </View>
-
-                            {isConfirmed ? (
-                              <View style={styles.actionBtn}>
-                                <UiButton
-                                  title="Ticket"
-                                  onPress={() => downloadStickerForAppointment(item)}
-                                  disabled={busy}
-                                  variant="primary"
-                                />
+                            <View style={styles.pillsRow}>
+                              <View style={[styles.pill, styles.pillNeutral]}>
+                                <Text style={styles.pillText}>{roleLabel}</Text>
                               </View>
-                            ) : null}
-
-                            <View style={styles.actionBtn}>
-                              <UiButton
-                                title="Cancel"
-                                onPress={() => setAppointmentStatus(item.id, 'cancelled')}
-                                disabled={busy}
-                                variant="secondary"
-                              />
+                              {isSelf ? (
+                                <View style={[styles.pill, styles.pillNeutral]}>
+                                  <Text style={styles.pillText}>YOU</Text>
+                                </View>
+                              ) : null}
+                              <View
+                                style={[
+                                  styles.pill,
+                                  isActive ? styles.pillSuccess : styles.pillDanger,
+                                ]}
+                              >
+                                <Text style={styles.pillText}>{statusLabel}</Text>
+                              </View>
                             </View>
                           </View>
-                        </>
+
+                          <View style={styles.accountRow}>
+                            <View style={styles.accountMiniCell}>
+                              <Text style={styles.accountLabel}>School ID</Text>
+                              <Text style={styles.accountValue}>{item?.school_id || '—'}</Text>
+                            </View>
+                            <View style={styles.accountMiniCell}>
+                              <Text style={styles.accountLabel}>Contact</Text>
+                              <Text style={styles.accountValue}>{item?.contact_number || '—'}</Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.actionRow}>
+                            {isActive ? (
+                              <UiButton
+                                title="Disable"
+                                onPress={() => setAccountActive(item.id, false)}
+                                disabled={busy || isSelf}
+                                variant="secondary"
+                              />
+                            ) : (
+                              <UiButton
+                                title="Enable"
+                                onPress={() => setAccountActive(item.id, true)}
+                                disabled={busy || isSelf}
+                                variant="primary"
+                              />
+                            )}
+                          </View>
+                        </View>
                       );
-                    })()}
-                  </View>
-                )}
-              />
-            </View>
-          ) : (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Create Appointment</Text>
-
-              <View style={styles.sectionBlock}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionBlockTitle}>Schedule</Text>
-                  <View style={styles.selectedChip}>
-                    <Text style={styles.selectedChipText}>
-                      {selectedDateYmd} • {selectedTime} UTC
-                    </Text>
-                  </View>
+                    }}
+                  />
                 </View>
+              ) : showAppointments ? (
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>Appointments</Text>
+                  <FlatList
+                    data={staffInboxAppointments}
+                    scrollEnabled={false}
+                    keyExtractor={(item) => String(item.id)}
+                    ListEmptyComponent={<Text style={styles.hint}>No pending appointments.</Text>}
+                    renderItem={({ item }) => (
+                      <View style={styles.item}>
+                        <View style={styles.itemHeaderRow}>
+                          <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
+                          <View
+                            style={[
+                              styles.pill,
+                              String(item.status || '').toLowerCase() === 'confirmed'
+                                ? styles.pillSuccess
+                                : String(item.status || '').toLowerCase() === 'cancelled'
+                                  ? styles.pillDanger
+                                  : styles.pillNeutral,
+                            ]}
+                          >
+                            <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.itemMeta}>
+                          Patient: {item.patient_full_name || '—'}
+                          {item.patient_age !== null && item.patient_age !== undefined
+                            ? ` (Age: ${item.patient_age})`
+                            : ''}
+                        </Text>
+                        <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
+                        <Text style={styles.hint}>
+                          Slots left this hour: {slotsLeftForIso(item.scheduled_for)}/{HOURLY_CAPACITY}
+                        </Text>
 
-                {!!earliestAvailableYmd && (
-                  <Text style={styles.hint}>
-                    Earliest available appointment: {earliestAvailableYmd}
-                  </Text>
-                )}
+                        {(() => {
+                          const dec = decryptedById.get(item.id);
+                          const reasonText = dec ? dec.reason : item.reason;
+                          const notesText = dec ? dec.notes : item.notes;
 
-                <Calendar
-                  cursor={calendarCursor}
-                  onChangeCursor={setCalendarCursor}
-                  selectedDateYmd={selectedDateYmd}
-                  onSelectDateYmd={setSelectedDateYmd}
-                  bookedCountByDate={bookedCountByDate}
-                  dailyCapacity={DAILY_CAPACITY}
-                />
+                          return (
+                            <>
+                              {!!reasonText && (
+                                <Text style={styles.itemBody}>
+                                  Reason: {reasonText}
+                                  {!dec ? ' (encrypted)' : ''}
+                                </Text>
+                              )}
+                              {!!notesText && (
+                                <Text style={styles.itemBody}>
+                                  Notes: {notesText}
+                                  {!dec ? ' (encrypted)' : ''}
+                                </Text>
+                              )}
 
-                <Field label="Time (UTC)">
+                              <View style={styles.actionRow}>
+                                <View style={styles.actionBtn}>
+                                  {!dec ? (
+                                    <UiButton
+                                      title="Decrypt"
+                                      onPress={() => decryptAppointment(item.id)}
+                                      disabled={busy}
+                                      variant="secondary"
+                                    />
+                                  ) : (
+                                    <UiButton
+                                      title="Hide"
+                                      onPress={() => hideDecrypted(item.id)}
+                                      disabled={busy}
+                                      variant="ghost"
+                                    />
+                                  )}
+                                </View>
+
+                                <View style={styles.actionBtn}>
+                                  <UiButton
+                                    title="Confirm"
+                                    onPress={() => setAppointmentStatus(item.id, 'confirmed')}
+                                    disabled={busy || slotsLeftForIso(item.scheduled_for) <= 0}
+                                    variant="primary"
+                                  />
+                                </View>
+
+                                <View style={styles.actionBtn}>
+                                  <UiButton
+                                    title="Cancel"
+                                    onPress={() => setAppointmentStatus(item.id, 'cancelled')}
+                                    disabled={busy}
+                                    variant="secondary"
+                                  />
+                                </View>
+                              </View>
+                            </>
+                          );
+                        })()}
+                      </View>
+                    )}
+                  />
+                </View>
+              ) : (
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>Schedule</Text>
+
+                  <Text style={styles.label}>Scheduled For</Text>
+                  {!!earliestAvailableYmd && (
+                    <Text style={styles.hint}>
+                      Earliest available appointment: {earliestAvailableYmd}
+                    </Text>
+                  )}
+
+                  <Calendar
+                    cursor={calendarCursor}
+                    onChangeCursor={setCalendarCursor}
+                    selectedDateYmd={selectedDateYmd}
+                    onSelectDateYmd={setSelectedDateYmd}
+                    bookedCountByDate={bookedCountByDateConfirmed}
+                    dailyCapacity={DAILY_CAPACITY}
+                  />
+
+                  <Text style={styles.label}>Time (UTC)</Text>
                   <View style={styles.pickerWrap}>
                     <Picker
                       enabled={!busy}
@@ -1463,56 +1343,363 @@ export default function App() {
                       ))}
                     </Picker>
                   </View>
-                  <Text style={styles.hint}>Selected: {selectedDateYmd} {selectedTime}</Text>
+                  <Text style={styles.hint}>
+                    Selected: {selectedDateYmd} {selectedTime}
+                  </Text>
                   <Text style={styles.hint}>
                     Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourSlotsLeft}/{HOURLY_CAPACITY} slots left)
                   </Text>
-                </Field>
-              </View>
 
-              <View style={styles.sectionBlock}>
-                <Text style={styles.sectionBlockTitle}>Details</Text>
+                  <View style={styles.availabilityList}>
+                    {timeOptions.map((opt) => {
+                      const key = `${selectedDateYmd} ${opt.value}`;
+                      const used = confirmedCountByYmdHour.get(key) || 0;
+                      const left = Math.max(0, HOURLY_CAPACITY - used);
+                      const statusText = left > 0 ? 'Available' : 'Not available';
+                      return (
+                        <View key={opt.value} style={styles.availabilityRow}>
+                          <Text style={styles.availabilityTime}>{opt.value}</Text>
+                          <Text style={styles.availabilityMeta}>
+                            {statusText} ({left}/{HOURLY_CAPACITY})
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
 
-                <Field label="Reason" hint="Visible only after decrypt (owner/staff).">
-                  <TextInput
-                    value={reason}
-                    onChangeText={setReason}
-                    style={[styles.input, styles.textarea]}
-                    multiline
-                    numberOfLines={3}
-                    textAlignVertical="top"
-                    placeholder="Enter reason for visit"
-                    placeholderTextColor={THEME.colors.muted}
+                  <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
+                    Appointments on {selectedDateYmd}
+                  </Text>
+                  <FlatList
+                    data={staffConfirmedAppointmentsForSelectedDate}
+                    scrollEnabled={false}
+                    keyExtractor={(item) => String(item.id)}
+                    ListEmptyComponent={<Text style={styles.hint}>No confirmed appointments for this date.</Text>}
+                    renderItem={({ item }) => (
+                      <View style={styles.item}>
+                        <View style={styles.itemHeaderRow}>
+                          <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
+                          <View
+                            style={[
+                              styles.pill,
+                              String(item.status || '').toLowerCase() === 'confirmed'
+                                ? styles.pillSuccess
+                                : String(item.status || '').toLowerCase() === 'cancelled'
+                                  ? styles.pillDanger
+                                  : styles.pillNeutral,
+                            ]}
+                          >
+                            <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.itemMeta}>
+                          Patient: {item.patient_full_name || '—'}
+                          {item.patient_age !== null && item.patient_age !== undefined
+                            ? ` (Age: ${item.patient_age})`
+                            : ''}
+                        </Text>
+                        <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
+
+                        {(() => {
+                          const dec = decryptedById.get(item.id);
+                          const reasonText = dec ? dec.reason : item.reason;
+                          const notesText = dec ? dec.notes : item.notes;
+
+                          return (
+                            <>
+                              {!!reasonText && (
+                                <Text style={styles.itemBody}>
+                                  Reason: {reasonText}
+                                  {!dec ? ' (encrypted)' : ''}
+                                </Text>
+                              )}
+                              {!!notesText && (
+                                <Text style={styles.itemBody}>
+                                  Notes: {notesText}
+                                  {!dec ? ' (encrypted)' : ''}
+                                </Text>
+                              )}
+
+                              <View style={styles.actionRow}>
+                                <View style={styles.actionBtn}>
+                                  {!dec ? (
+                                    <UiButton
+                                      title="Decrypt"
+                                      onPress={() => decryptAppointment(item.id)}
+                                      disabled={busy}
+                                      variant="secondary"
+                                    />
+                                  ) : (
+                                    <UiButton
+                                      title="Hide"
+                                      onPress={() => hideDecrypted(item.id)}
+                                      disabled={busy}
+                                      variant="ghost"
+                                    />
+                                  )}
+                                </View>
+
+                                <View style={styles.actionBtn}>
+                                  <UiButton
+                                    title="Cancel"
+                                    onPress={() => setAppointmentStatus(item.id, 'cancelled')}
+                                    disabled={busy}
+                                    variant="secondary"
+                                  />
+                                </View>
+                              </View>
+                            </>
+                          );
+                        })()}
+                      </View>
+                    )}
                   />
-                </Field>
-
-                <Field label="Notes" hint="Optional additional information.">
-                  <TextInput
-                    value={notes}
-                    onChangeText={setNotes}
-                    style={[styles.input, styles.textarea]}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    placeholder="Enter notes (optional)"
-                    placeholderTextColor={THEME.colors.muted}
+                </View>
+              )}
+            </FadeSlideIn>
+          </ScrollView>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <View style={styles.brandBar}>
+              <View style={styles.brandLeft}>
+                {UA_LOGO_URI ? (
+                  <Image
+                    source={{ uri: UA_LOGO_URI }}
+                    style={styles.brandLogo}
+                    resizeMode="contain"
+                    accessibilityLabel="University of the Assumption logo"
                   />
-                </Field>
+                ) : (
+                  <View style={styles.brandLogoFallback}>
+                    <Text style={styles.brandLogoFallbackText}>UA</Text>
+                  </View>
+                )}
+                <View style={styles.brandTextWrap}>
+                  <Text style={styles.title}>University of the Assumption</Text>
+                  <Text style={styles.subtitle}>University Clinic • Appointment System</Text>
+                </View>
               </View>
+            </View>
+          </View>
 
-              <UiButton
-                title="Create"
-                onPress={createAppointment}
-                disabled={busy || !scheduledForIso || isWeekendYmd(selectedDateYmd) || selectedHourSlotsLeft <= 0}
-                variant="primary"
-              />
+          {!!error && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
-        </>
+
+          <FadeSlideIn key={screenKey} style={styles.screenWrap}>
+            <View style={styles.topBar}>
+              <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
+              <UiButton
+                title={showAppointments ? 'Create' : 'My Appointments'}
+                onPress={() => {
+                  setShowAccounts(false);
+                  setShowAppointments((v) => !v);
+                }}
+                disabled={busy}
+                variant="primary"
+              />
+              <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
+            </View>
+
+            {!showAccounts ? <AccountDetails me={me} emailFallback={email} /> : null}
+
+            {!!token && !me ? (
+              <View style={styles.card}>
+                <Text style={styles.hint}>Loading account…</Text>
+              </View>
+            ) : showAppointments ? (
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>My Appointments</Text>
+                <FlatList
+                  data={appointments}
+                  scrollEnabled={false}
+                  keyExtractor={(item) => String(item.id)}
+                  ListEmptyComponent={<Text style={styles.hint}>No appointments yet.</Text>}
+                  renderItem={({ item }) => (
+                    <View style={styles.item}>
+                      <View style={styles.itemHeaderRow}>
+                        <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
+                        <View
+                          style={[
+                            styles.pill,
+                            String(item.status || '').toLowerCase() === 'confirmed'
+                              ? styles.pillSuccess
+                              : String(item.status || '').toLowerCase() === 'cancelled'
+                                ? styles.pillDanger
+                                : styles.pillNeutral,
+                          ]}
+                        >
+                          <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
+
+                      {(() => {
+                        const dec = decryptedById.get(item.id);
+                        const reasonText = dec ? dec.reason : item.reason;
+                        const notesText = dec ? dec.notes : item.notes;
+                        const isConfirmed = String(item.status || '').toLowerCase() === 'confirmed';
+
+                        return (
+                          <>
+                            {!!reasonText && (
+                              <Text style={styles.itemBody}>
+                                Reason: {reasonText}
+                                {!dec ? ' (encrypted)' : ''}
+                              </Text>
+                            )}
+                            {!!notesText && (
+                              <Text style={styles.itemBody}>
+                                Notes: {notesText}
+                                {!dec ? ' (encrypted)' : ''}
+                              </Text>
+                            )}
+
+                            <View style={styles.actionRow}>
+                              <View style={styles.actionBtn}>
+                                {!dec ? (
+                                  <UiButton
+                                    title="Decrypt"
+                                    onPress={() => decryptAppointment(item.id)}
+                                    disabled={busy}
+                                    variant="secondary"
+                                  />
+                                ) : (
+                                  <UiButton
+                                    title="Hide"
+                                    onPress={() => hideDecrypted(item.id)}
+                                    disabled={busy}
+                                    variant="ghost"
+                                  />
+                                )}
+                              </View>
+
+                              {isConfirmed ? (
+                                <View style={styles.actionBtn}>
+                                  <UiButton
+                                    title="Ticket"
+                                    onPress={() => downloadStickerForAppointment(item)}
+                                    disabled={busy}
+                                    variant="primary"
+                                  />
+                                </View>
+                              ) : null}
+
+                              <View style={styles.actionBtn}>
+                                <UiButton
+                                  title="Cancel"
+                                  onPress={() => setAppointmentStatus(item.id, 'cancelled')}
+                                  disabled={busy}
+                                  variant="secondary"
+                                />
+                              </View>
+                            </View>
+                          </>
+                        );
+                      })()}
+                    </View>
+                  )}
+                />
+              </View>
+            ) : (
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Create Appointment</Text>
+
+                <View style={styles.sectionBlock}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionBlockTitle}>Schedule</Text>
+                    <View style={styles.selectedChip}>
+                      <Text style={styles.selectedChipText}>
+                        {selectedDateYmd} • {selectedTime} UTC
+                      </Text>
+                    </View>
+                  </View>
+
+                  {!!earliestAvailableYmd && (
+                    <Text style={styles.hint}>
+                      Earliest available appointment: {earliestAvailableYmd}
+                    </Text>
+                  )}
+
+                  <Calendar
+                    cursor={calendarCursor}
+                    onChangeCursor={setCalendarCursor}
+                    selectedDateYmd={selectedDateYmd}
+                    onSelectDateYmd={setSelectedDateYmd}
+                    bookedCountByDate={bookedCountByDate}
+                    dailyCapacity={DAILY_CAPACITY}
+                  />
+
+                  <Field label="Time (UTC)">
+                    <View style={styles.pickerWrap}>
+                      <Picker
+                        enabled={!busy}
+                        selectedValue={selectedTime}
+                        onValueChange={(v) => setSelectedTime(String(v))}
+                        style={styles.picker}
+                      >
+                        {timeOptionsWithAvailability.map((opt) => (
+                          <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                        ))}
+                      </Picker>
+                    </View>
+                    <Text style={styles.hint}>Selected: {selectedDateYmd} {selectedTime}</Text>
+                    <Text style={styles.hint}>
+                      Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourSlotsLeft}/{HOURLY_CAPACITY} slots left)
+                    </Text>
+                  </Field>
+                </View>
+
+                <View style={styles.sectionBlock}>
+                  <Text style={styles.sectionBlockTitle}>Details</Text>
+
+                  <Field label="Reason" hint="Visible only after decrypt (owner/staff).">
+                    <TextInput
+                      value={reason}
+                      onChangeText={setReason}
+                      style={[styles.input, styles.textarea]}
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                      placeholder="Enter reason for visit"
+                      placeholderTextColor={THEME.colors.muted}
+                    />
+                  </Field>
+
+                  <Field label="Notes" hint="Optional additional information.">
+                    <TextInput
+                      value={notes}
+                      onChangeText={setNotes}
+                      style={[styles.input, styles.textarea]}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                      placeholder="Enter notes (optional)"
+                      placeholderTextColor={THEME.colors.muted}
+                    />
+                  </Field>
+                </View>
+
+                <UiButton
+                  title="Create"
+                  onPress={createAppointment}
+                  disabled={busy || !scheduledForIso || isWeekendYmd(selectedDateYmd) || selectedHourSlotsLeft <= 0}
+                  variant="primary"
+                />
+              </View>
+            )}
+          </FadeSlideIn>
+        </ScrollView>
       )}
 
-      </FadeSlideIn>
-      </ScrollView>
       <StatusBar style="auto" />
     </SafeAreaView>
   );
@@ -1728,6 +1915,351 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.bg,
     width: '100%',
     maxWidth: 980,
+    alignSelf: 'center',
+  },
+
+  // --- Shared brand/header ------------------------------------------------
+  brandBar: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    borderRadius: THEME.radius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: THEME.colors.surface,
+  },
+  brandLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  brandLogo: {
+    width: 54,
+    height: 54,
+  },
+  brandLogoFallback: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.bg,
+  },
+  brandLogoFallbackText: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    letterSpacing: 1.2,
+  },
+  brandTextWrap: {
+    flex: 1,
+  },
+
+  // --- Auth (glass login/register) ----------------------------------------
+  authShell: {
+    flex: 1,
+  },
+  authBg: {
+    flex: 1,
+    backgroundColor: THEME.colors.bg,
+  },
+  authBlob: {
+    position: 'absolute',
+    borderRadius: 999,
+    opacity: 0.12,
+  },
+  authBlobOne: {
+    width: 340,
+    height: 340,
+    left: -120,
+    top: -90,
+    backgroundColor: THEME.colors.primary,
+  },
+  authBlobTwo: {
+    width: 420,
+    height: 420,
+    right: -160,
+    top: 90,
+    backgroundColor: THEME.colors.accent,
+  },
+  authBlobThree: {
+    width: 320,
+    height: 320,
+    left: 40,
+    bottom: -140,
+    backgroundColor: THEME.colors.primary,
+    opacity: 0.08,
+  },
+  authContainer: {
+    flexGrow: 1,
+    padding: 18,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  authCard: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    borderRadius: THEME.radius.md,
+    padding: 18,
+    overflow: 'hidden',
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: THEME.colors.surface,
+    opacity: 0.82,
+  },
+  authBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 10,
+  },
+  authBrandLogo: {
+    width: 44,
+    height: 44,
+  },
+  authBrandLogoFallback: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.bg,
+  },
+  authBrandLogoFallbackText: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    letterSpacing: 1.2,
+    fontSize: 12,
+  },
+  authBrandTitle: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    letterSpacing: 0.2,
+  },
+  authBrandSub: {
+    marginTop: 2,
+    color: THEME.colors.muted,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  authTabsRow: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 4,
+    marginBottom: 12,
+    backgroundColor: THEME.colors.bg,
+  },
+  authTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  authTabActive: {
+    backgroundColor: THEME.colors.primary,
+  },
+  authTabPressed: {
+    opacity: 0.92,
+  },
+  authTabText: {
+    fontWeight: '900',
+    letterSpacing: 0.3,
+    color: THEME.colors.text,
+  },
+  authTabTextActive: {
+    color: THEME.colors.primaryText,
+  },
+  authHeading: {
+    marginTop: 2,
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: 1.0,
+    color: THEME.colors.text,
+    textAlign: 'center',
+  },
+  authSubHeading: {
+    marginTop: 6,
+    marginBottom: 4,
+    color: THEME.colors.muted,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  authInput: {
+    backgroundColor: THEME.colors.surface,
+  },
+  authMetaRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
+  },
+  rememberPressed: {
+    opacity: 0.9,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: THEME.colors.borderStrong,
+    backgroundColor: THEME.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: THEME.colors.primary,
+    borderColor: THEME.colors.primary,
+  },
+  checkboxTick: {
+    fontWeight: '900',
+    color: THEME.colors.primaryText,
+    marginTop: -1,
+  },
+  rememberText: {
+    fontWeight: '800',
+    color: THEME.colors.text,
+  },
+  authLink: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    textDecorationLine: 'underline',
+  },
+  authLinkPressed: {
+    opacity: 0.85,
+  },
+
+  // --- Staff shell (sidebar + content) ------------------------------------
+  staffShell: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: THEME.colors.bg,
+  },
+  sidebar: {
+    width: 270,
+    padding: 14,
+    backgroundColor: THEME.colors.surface,
+    borderRightWidth: 1,
+    borderRightColor: THEME.colors.border,
+  },
+  sidebarBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.colors.border,
+  },
+  sidebarLogo: {
+    width: 40,
+    height: 40,
+  },
+  sidebarLogoFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sidebarLogoFallbackText: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    letterSpacing: 1.2,
+    fontSize: 12,
+  },
+  sidebarTitle: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    letterSpacing: 0.2,
+  },
+  sidebarSub: {
+    marginTop: 2,
+    color: THEME.colors.muted,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  sidebarUserCard: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    borderRadius: THEME.radius.md,
+    padding: 12,
+    backgroundColor: THEME.colors.bg,
+  },
+  sidebarUserName: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+  },
+  sidebarUserMeta: {
+    marginTop: 4,
+    color: THEME.colors.muted,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  sidebarPillsRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  sidebarNav: {
+    marginTop: 12,
+    gap: 8,
+  },
+  sidebarNavItem: {
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    borderRadius: THEME.radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: THEME.colors.surface,
+  },
+  sidebarNavItemActive: {
+    borderColor: THEME.colors.primary,
+  },
+  sidebarNavItemPressed: {
+    opacity: 0.92,
+  },
+  sidebarNavText: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    letterSpacing: 0.2,
+  },
+  sidebarActions: {
+    marginTop: 'auto',
+    gap: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: THEME.colors.border,
+  },
+  staffScroll: {
+    flex: 1,
+  },
+  staffContainer: {
+    flexGrow: 1,
+    padding: 18,
+    width: '100%',
+    maxWidth: 1100,
     alignSelf: 'center',
   },
   header: {
