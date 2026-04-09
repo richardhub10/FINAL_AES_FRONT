@@ -38,25 +38,27 @@ import {
   View,
 } from 'react-native';
 
-// Expo supports "public" env vars that can be embedded at build time.
-// NOTE: Use `process.env.EXPO_PUBLIC_*` (without optional chaining) so Expo's
-// web bundler can reliably inline the values during `expo export`.
-let API_BASE_URL = 'https://aes-backend-ggxi.onrender.com';
+// Public config resolution order:
+// 1) Runtime-injected values from the Railway Node server (window.__EXPO_PUBLIC_*)
+// 2) Build-time inlined Expo vars (process.env.EXPO_PUBLIC_*)
+// 3) Hardcoded fallback (old Render URL)
+const RUNTIME_API_BASE_URL =
+  (typeof window !== 'undefined' && window.__EXPO_PUBLIC_API_BASE_URL) || '';
+const RUNTIME_UA_LOGO_URI =
+  (typeof window !== 'undefined' && window.__EXPO_PUBLIC_UA_LOGO_URI) || '';
+
+let API_BASE_URL = RUNTIME_API_BASE_URL || 'https://aes-backend-ggxi.onrender.com';
+let UA_LOGO_URI = RUNTIME_UA_LOGO_URI || '';
+
 try {
-  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+  if (!API_BASE_URL && process.env.EXPO_PUBLIC_API_BASE_URL) {
     API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
   }
-} catch (e) {
-  // `process` may be undefined in some web runtimes; keep fallback.
-}
-
-let UA_LOGO_URI = '';
-try {
-  if (process.env.EXPO_PUBLIC_UA_LOGO_URI) {
+  if (!UA_LOGO_URI && process.env.EXPO_PUBLIC_UA_LOGO_URI) {
     UA_LOGO_URI = process.env.EXPO_PUBLIC_UA_LOGO_URI;
   }
 } catch (e) {
-  // ignore
+  // `process` may be undefined in some web runtimes; keep runtime/fallback.
 }
 
 function joinUrl(base, path) {

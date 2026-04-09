@@ -42,6 +42,24 @@ async function readFileIfExists(filePath) {
   }
 }
 
+function injectRuntimeConfigIntoHtml(htmlText) {
+  // Make Railway runtime env vars available to the client app.
+  // This avoids relying on build-time env inlining.
+  const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || '';
+  const logoUri = process.env.EXPO_PUBLIC_UA_LOGO_URI || '';
+  const script =
+    `<script>` +
+    `window.__EXPO_PUBLIC_API_BASE_URL=${JSON.stringify(apiBaseUrl)};` +
+    `window.__EXPO_PUBLIC_UA_LOGO_URI=${JSON.stringify(logoUri)};` +
+    `</script>`;
+
+  // Inject before </head> if present; otherwise prepend.
+  if (/<\s*\/\s*head\s*>/i.test(htmlText)) {
+    return htmlText.replace(/<\s*\/\s*head\s*>/i, script + '</head>');
+  }
+  return script + htmlText;
+}
+
 function createStaticServer() {
   return http.createServer(async (req, res) => {
     try {
@@ -96,14 +114,20 @@ function createStaticServer() {
         }
         res.statusCode = 200;
         res.setHeader('Content-Type', contentTypes['.html']);
-        res.end(body);
+        const html = injectRuntimeConfigIntoHtml(body.toString('utf-8'));
+        res.end(html);
         return;
       }
 
       const ext = path.extname(filePath).toLowerCase();
       res.statusCode = 200;
       res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
-      res.end(body);
+      if (ext === '.html') {
+        const html = injectRuntimeConfigIntoHtml(body.toString('utf-8'));
+        res.end(html);
+      } else {
+        res.end(body);
+      }
     } catch (e) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
