@@ -123,7 +123,8 @@ async function main() {
   const primaryPort = envPort || 3000;
   const extraPorts = new Set();
   extraPorts.add(primaryPort);
-  // Some platforms route HTTP to 8080 even if PORT isn't set.
+  // Railway/service configs sometimes route HTTP to 3000 or 8080 regardless of PORT.
+  extraPorts.add(3000);
   extraPorts.add(8080);
 
   const ports = Array.from(extraPorts);
@@ -138,6 +139,8 @@ async function main() {
       resolve();
     });
   });
+
+  console.log(`[static-server] Will listen on: ${ports.join(', ')}`);
 
   const secondaryPorts = ports.filter((p) => p !== primaryPort);
   for (const p of secondaryPorts) {
