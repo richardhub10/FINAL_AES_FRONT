@@ -38,15 +38,26 @@ import {
   View,
 } from 'react-native';
 
-const API_BASE_URL =
-  // Expo supports "public" env vars that can be embedded at build time.
-  (typeof process !== 'undefined' && process?.env?.EXPO_PUBLIC_API_BASE_URL) ||
-  'https://aes-backend-ggxi.onrender.com';
+// Expo supports "public" env vars that can be embedded at build time.
+// NOTE: Use `process.env.EXPO_PUBLIC_*` (without optional chaining) so Expo's
+// web bundler can reliably inline the values during `expo export`.
+let API_BASE_URL = 'https://aes-backend-ggxi.onrender.com';
+try {
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+    API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+  }
+} catch (e) {
+  // `process` may be undefined in some web runtimes; keep fallback.
+}
 
-const UA_LOGO_URI =
-  // Optional UA logo shown in the app header.
-  (typeof process !== 'undefined' && process?.env?.EXPO_PUBLIC_UA_LOGO_URI) ||
-  '';
+let UA_LOGO_URI = '';
+try {
+  if (process.env.EXPO_PUBLIC_UA_LOGO_URI) {
+    UA_LOGO_URI = process.env.EXPO_PUBLIC_UA_LOGO_URI;
+  }
+} catch (e) {
+  // ignore
+}
 
 function joinUrl(base, path) {
   // Simple URL join helper (avoids accidental double slashes).
