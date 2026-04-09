@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "serve -s dist -l tcp://0.0.0.0:$PORT",
+    "start": "node server.js",
     "dev": "expo start",
     "start:railway": "npm run start",
     "android": "expo start --android",
