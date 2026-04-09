@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
-    "start:railway": "serve -s dist -l $PORT",
+    "start": "serve -s dist -l $PORT",
+    "dev": "expo start",
+    "start:railway": "npm run start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
