@@ -1742,36 +1742,6 @@ export default function App() {
                       variant="primary"
                     />
                   </View>
-
-                  <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Appointments on {selectedDateYmd}</Text>
-                    <FlatList
-                      data={myAppointmentsForSelectedDate}
-                      scrollEnabled={false}
-                      keyExtractor={(item) => String(item.id)}
-                      ListEmptyComponent={<Text style={styles.hint}>No appointments for this date.</Text>}
-                      renderItem={({ item }) => (
-                        <View style={styles.item}>
-                          <View style={styles.itemHeaderRow}>
-                            <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
-                            <View
-                              style={[
-                                styles.pill,
-                                String(item.status || '').toLowerCase() === 'confirmed'
-                                  ? styles.pillSuccess
-                                  : String(item.status || '').toLowerCase() === 'cancelled'
-                                    ? styles.pillDanger
-                                    : styles.pillNeutral,
-                              ]}
-                            >
-                              <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
-                            </View>
-                          </View>
-                          <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
-                        </View>
-                      )}
-                    />
-                  </View>
                 </>
               )}
             </FadeSlideIn>
