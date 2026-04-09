@@ -34,6 +34,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -327,6 +328,9 @@ function AccountDetails({ me, emailFallback }) {
 }
 
 export default function App() {
+  const { width: windowWidth } = useWindowDimensions();
+  const isNarrowLayout = windowWidth < 820;
+
   // --- Auth/UI mode state -------------------------------------------------
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [showAppointments, setShowAppointments] = useState(false);
@@ -1053,8 +1057,8 @@ export default function App() {
           </View>
         </View>
       ) : isStaff ? (
-        <View style={styles.staffShell}>
-          <View style={styles.sidebar}>
+        <View style={[styles.staffShell, isNarrowLayout ? styles.staffShellMobile : null]}>
+          <View style={[styles.sidebar, isNarrowLayout ? styles.sidebarMobile : null]}>
             <View style={styles.sidebarBrandRow}>
               {UA_LOGO_URI ? (
                 <Image
@@ -1099,12 +1103,13 @@ export default function App() {
               </View>
             </View>
 
-            <View style={styles.sidebarNav}>
+            <View style={[styles.sidebarNav, isNarrowLayout ? styles.sidebarNavMobile : null]}>
               <Pressable
                 onPress={goStaffHome}
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.sidebarNavItem,
+                  isNarrowLayout ? styles.sidebarNavItemMobile : null,
                   staffNavKey === 'home' ? styles.sidebarNavItemActive : null,
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
@@ -1116,6 +1121,7 @@ export default function App() {
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.sidebarNavItem,
+                  isNarrowLayout ? styles.sidebarNavItemMobile : null,
                   staffNavKey === 'appointments' ? styles.sidebarNavItemActive : null,
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
@@ -1127,6 +1133,7 @@ export default function App() {
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.sidebarNavItem,
+                  isNarrowLayout ? styles.sidebarNavItemMobile : null,
                   staffNavKey === 'accounts' ? styles.sidebarNavItemActive : null,
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
@@ -1135,7 +1142,7 @@ export default function App() {
               </Pressable>
             </View>
 
-            <View style={styles.sidebarActions}>
+            <View style={[styles.sidebarActions, isNarrowLayout ? styles.sidebarActionsMobile : null]}>
               <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
               <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
             </View>
@@ -1143,7 +1150,7 @@ export default function App() {
 
           <ScrollView
             style={styles.staffScroll}
-            contentContainerStyle={styles.staffContainer}
+            contentContainerStyle={[styles.staffContainer, isNarrowLayout ? styles.staffContainerMobile : null]}
             keyboardShouldPersistTaps="handled"
           >
             {!!error && (
@@ -1467,8 +1474,8 @@ export default function App() {
           </ScrollView>
         </View>
       ) : (
-        <View style={styles.staffShell}>
-          <View style={styles.sidebar}>
+        <View style={[styles.staffShell, isNarrowLayout ? styles.staffShellMobile : null]}>
+          <View style={[styles.sidebar, isNarrowLayout ? styles.sidebarMobile : null]}>
             <View style={styles.sidebarBrandRow}>
               {UA_LOGO_URI ? (
                 <Image
@@ -1509,12 +1516,13 @@ export default function App() {
               </View>
             </View>
 
-            <View style={styles.sidebarNav}>
+            <View style={[styles.sidebarNav, isNarrowLayout ? styles.sidebarNavMobile : null]}>
               <Pressable
                 onPress={goStudentHome}
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.sidebarNavItem,
+                  isNarrowLayout ? styles.sidebarNavItemMobile : null,
                   studentNavKey === 'home' ? styles.sidebarNavItemActive : null,
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
@@ -1526,6 +1534,7 @@ export default function App() {
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.sidebarNavItem,
+                  isNarrowLayout ? styles.sidebarNavItemMobile : null,
                   studentNavKey === 'appointments' ? styles.sidebarNavItemActive : null,
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
@@ -1537,6 +1546,7 @@ export default function App() {
                 disabled={busy}
                 style={({ pressed }) => [
                   styles.sidebarNavItem,
+                  isNarrowLayout ? styles.sidebarNavItemMobile : null,
                   studentNavKey === 'account' ? styles.sidebarNavItemActive : null,
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
@@ -1545,7 +1555,7 @@ export default function App() {
               </Pressable>
             </View>
 
-            <View style={styles.sidebarActions}>
+            <View style={[styles.sidebarActions, isNarrowLayout ? styles.sidebarActionsMobile : null]}>
               <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
               <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
             </View>
@@ -1553,7 +1563,7 @@ export default function App() {
 
           <ScrollView
             style={styles.staffScroll}
-            contentContainerStyle={styles.staffContainer}
+            contentContainerStyle={[styles.staffContainer, isNarrowLayout ? styles.staffContainerMobile : null]}
             keyboardShouldPersistTaps="handled"
           >
             {!!error && (
@@ -1798,6 +1808,9 @@ function Calendar({
   bookedCountByDate,
   dailyCapacity,
 }) {
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompact = windowWidth < 420;
+
   const year = cursor.getUTCFullYear();
   const month = cursor.getUTCMonth(); // 0-11
 
@@ -1833,12 +1846,15 @@ function Calendar({
   return (
     <View style={styles.calendarCard}>
       <View style={styles.calendarHeaderRow}>
-        <Text style={styles.calendarTitle}>Schedule: {monthName} {year}</Text>
+        <Text style={[styles.calendarTitle, isCompact ? styles.calendarTitleNarrow : null]}>
+          Schedule: {monthName} {year}
+        </Text>
         <View style={styles.calendarNavRow}>
           <Pressable
             onPress={prevMonth}
             style={({ pressed }) => [
               styles.calendarNavIconBtn,
+              isCompact ? styles.calendarNavIconBtnNarrow : null,
               pressed ? styles.calendarNavIconBtnPressed : null,
             ]}
             accessibilityRole="button"
@@ -1850,6 +1866,7 @@ function Calendar({
             onPress={nextMonth}
             style={({ pressed }) => [
               styles.calendarNavIconBtn,
+              isCompact ? styles.calendarNavIconBtnNarrow : null,
               pressed ? styles.calendarNavIconBtnPressed : null,
             ]}
             accessibilityRole="button"
@@ -1862,7 +1879,7 @@ function Calendar({
 
       <View style={styles.calendarWeekdaysRow}>
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-          <Text key={d} style={styles.calendarWeekday}>
+          <Text key={d} style={[styles.calendarWeekday, isCompact ? styles.calendarWeekdayNarrow : null]}>
             {d}
           </Text>
         ))}
@@ -1872,7 +1889,16 @@ function Calendar({
         <View key={wi} style={styles.calendarWeekRow}>
           {week.map((cell, di) => {
             if (!cell) {
-              return <View key={di} style={[styles.calendarDay, styles.calendarDayEmpty]} />;
+              return (
+                <View
+                  key={di}
+                  style={[
+                    styles.calendarDay,
+                    isCompact ? styles.calendarDayNarrow : null,
+                    styles.calendarDayEmpty,
+                  ]}
+                />
+              );
             }
 
             const ymd = cell.ymd;
@@ -1890,6 +1916,7 @@ function Calendar({
                 onPress={() => onSelectDateYmd(ymd)}
                 style={({ pressed }) => [
                   styles.calendarDay,
+                  isCompact ? styles.calendarDayNarrow : null,
                   showFullHighlight ? styles.calendarDayFull : null,
                   isSelected ? styles.calendarDaySelected : null,
                   disabled ? styles.calendarDayDisabled : null,
@@ -1899,7 +1926,7 @@ function Calendar({
                 {showFullHighlight ? <View style={styles.calendarFullPill} /> : null}
 
                 {isSelected ? (
-                  <View style={styles.calendarSelectedCircle}>
+                  <View style={[styles.calendarSelectedCircle, isCompact ? styles.calendarSelectedCircleNarrow : null]}>
                     <Text style={styles.calendarSelectedText}>{cell.day}</Text>
                   </View>
                 ) : (
@@ -1914,7 +1941,14 @@ function Calendar({
                   </Text>
                 )}
 
-                {showAvailableDot ? <View style={styles.calendarDotAvailable} /> : null}
+                {showAvailableDot ? (
+                  <View
+                    style={[
+                      styles.calendarDotAvailable,
+                      isCompact ? styles.calendarDotAvailableNarrow : null,
+                    ]}
+                  />
+                ) : null}
               </Pressable>
             );
           })}
@@ -1981,6 +2015,9 @@ function TimeSlotGrid({
   capacity,
   busy,
 }) {
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompact = windowWidth < 420;
+
   return (
     <View style={styles.timeSlotsWrap}>
       {(timeOptions || []).map((opt) => {
@@ -1997,6 +2034,7 @@ function TimeSlotGrid({
             disabled={disabled}
             style={({ pressed }) => [
               styles.timeSlotBtn,
+              isCompact ? styles.timeSlotBtnNarrow : null,
               isSelected ? styles.timeSlotBtnSelected : null,
               disabled ? styles.timeSlotBtnDisabled : null,
               pressed && !disabled ? styles.timeSlotBtnPressed : null,
@@ -2007,6 +2045,7 @@ function TimeSlotGrid({
             <Text
               style={[
                 styles.timeSlotText,
+                isCompact ? styles.timeSlotTextNarrow : null,
                 isSelected ? styles.timeSlotTextSelected : null,
                 disabled ? styles.timeSlotTextDisabled : null,
               ]}
@@ -2307,12 +2346,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: THEME.colors.bg,
   },
+  staffShellMobile: {
+    flexDirection: 'column',
+  },
   sidebar: {
     width: 270,
     padding: 14,
     backgroundColor: THEME.colors.primary,
     borderRightWidth: 1,
     borderRightColor: THEME.colors.border,
+  },
+  sidebarMobile: {
+    width: '100%',
+    borderRightWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.colors.border,
   },
   sidebarBrandRow: {
     flexDirection: 'row',
@@ -2386,6 +2434,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 8,
   },
+  sidebarNavMobile: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
   sidebarNavItem: {
     borderWidth: 1,
     borderColor: THEME.colors.border,
@@ -2393,6 +2446,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     backgroundColor: THEME.colors.surface,
+  },
+  sidebarNavItemMobile: {
+    flexGrow: 1,
+    minWidth: 140,
+    paddingVertical: 8,
   },
   sidebarNavItemActive: {
     borderColor: THEME.colors.primary,
@@ -2412,6 +2470,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
   },
+  sidebarActionsMobile: {
+    marginTop: 12,
+    paddingTop: 0,
+    borderTopWidth: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
   staffScroll: {
     flex: 1,
   },
@@ -2421,6 +2487,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 1100,
     alignSelf: 'center',
+  },
+  staffContainerMobile: {
+    padding: 12,
+    maxWidth: '100%',
+    alignSelf: 'stretch',
   },
   header: {
     marginBottom: 10,
@@ -2667,6 +2738,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  timeSlotBtnNarrow: {
+    minWidth: 96,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
   timeSlotBtnSelected: {
     backgroundColor: THEME.colors.primary,
     borderColor: THEME.colors.primary,
@@ -2681,6 +2757,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.2,
     color: THEME.colors.text,
+  },
+  timeSlotTextNarrow: {
+    fontSize: 12,
   },
   timeSlotTextSelected: {
     color: THEME.colors.primaryText,
@@ -2886,6 +2965,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     letterSpacing: 0.2,
   },
+  calendarTitleNarrow: {
+    fontSize: 16,
+  },
   calendarNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2900,6 +2982,11 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  calendarNavIconBtnNarrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
   },
   calendarNavIconBtnPressed: {
     opacity: 0.85,
@@ -2921,6 +3008,10 @@ const styles = StyleSheet.create({
     color: THEME.colors.muted,
     fontWeight: '600',
   },
+  calendarWeekdayNarrow: {
+    width: 34,
+    fontSize: 12,
+  },
   calendarWeekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -2934,6 +3025,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
+  },
+  calendarDayNarrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
   },
   calendarDayEmpty: {
     backgroundColor: 'transparent',
@@ -2980,6 +3076,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  calendarSelectedCircleNarrow: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
   calendarSelectedText: {
     color: THEME.colors.primaryText,
     fontWeight: '900',
@@ -2991,5 +3092,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
     backgroundColor: THEME.colors.successText,
     opacity: 0.85,
+  },
+  calendarDotAvailableNarrow: {
+    marginTop: 2,
   },
 });
