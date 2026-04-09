@@ -1,0 +1,4 @@
+# Build the Expo web bundle (dist/) and serve it.
+
+[start]
+cmd = "npm run start:railway"
