@@ -216,6 +216,7 @@ function UiButton({
   disabled,
   variant = 'primary',
   style,
+  textStyle,
 }) {
   return (
     <Pressable
@@ -238,6 +239,7 @@ function UiButton({
           variant === 'primary' ? styles.btnTextPrimary : null,
           variant !== 'primary' ? styles.btnTextSecondary : null,
           disabled ? styles.btnTextDisabled : null,
+          textStyle,
         ]}
       >
         {title}
@@ -1114,7 +1116,14 @@ export default function App() {
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
               >
-                <Text style={styles.sidebarNavText}>Home</Text>
+                <Text
+                  style={[
+                    styles.sidebarNavText,
+                    staffNavKey === 'home' ? styles.sidebarNavTextActive : null,
+                  ]}
+                >
+                  Home
+                </Text>
               </Pressable>
               <Pressable
                 onPress={goStaffAppointments}
@@ -1126,7 +1135,14 @@ export default function App() {
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
               >
-                <Text style={styles.sidebarNavText}>Appointments</Text>
+                <Text
+                  style={[
+                    styles.sidebarNavText,
+                    staffNavKey === 'appointments' ? styles.sidebarNavTextActive : null,
+                  ]}
+                >
+                  Appointments
+                </Text>
               </Pressable>
               <Pressable
                 onPress={goStaffAccounts}
@@ -1138,13 +1154,27 @@ export default function App() {
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
               >
-                <Text style={styles.sidebarNavText}>Accounts</Text>
+                <Text
+                  style={[
+                    styles.sidebarNavText,
+                    staffNavKey === 'accounts' ? styles.sidebarNavTextActive : null,
+                  ]}
+                >
+                  Accounts
+                </Text>
               </Pressable>
             </View>
 
             <View style={[styles.sidebarActions, isNarrowLayout ? styles.sidebarActionsMobile : null]}>
               <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
-              <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
+              <UiButton
+                title="Logout"
+                onPress={logout}
+                disabled={busy}
+                variant="ghost"
+                style={styles.sidebarActionGhostBtn}
+                textStyle={styles.sidebarActionGhostText}
+              />
             </View>
           </View>
 
@@ -1527,7 +1557,14 @@ export default function App() {
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
               >
-                <Text style={styles.sidebarNavText}>Home</Text>
+                <Text
+                  style={[
+                    styles.sidebarNavText,
+                    studentNavKey === 'home' ? styles.sidebarNavTextActive : null,
+                  ]}
+                >
+                  Home
+                </Text>
               </Pressable>
               <Pressable
                 onPress={goStudentAppointments}
@@ -1539,7 +1576,14 @@ export default function App() {
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
               >
-                <Text style={styles.sidebarNavText}>My Appointments</Text>
+                <Text
+                  style={[
+                    styles.sidebarNavText,
+                    studentNavKey === 'appointments' ? styles.sidebarNavTextActive : null,
+                  ]}
+                >
+                  My Appointments
+                </Text>
               </Pressable>
               <Pressable
                 onPress={goStudentAccount}
@@ -1551,13 +1595,27 @@ export default function App() {
                   pressed ? styles.sidebarNavItemPressed : null,
                 ]}
               >
-                <Text style={styles.sidebarNavText}>Account</Text>
+                <Text
+                  style={[
+                    styles.sidebarNavText,
+                    studentNavKey === 'account' ? styles.sidebarNavTextActive : null,
+                  ]}
+                >
+                  Account
+                </Text>
               </Pressable>
             </View>
 
             <View style={[styles.sidebarActions, isNarrowLayout ? styles.sidebarActionsMobile : null]}>
               <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
-              <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
+              <UiButton
+                title="Logout"
+                onPress={logout}
+                disabled={busy}
+                variant="ghost"
+                style={styles.sidebarActionGhostBtn}
+                textStyle={styles.sidebarActionGhostText}
+              />
             </View>
           </View>
 
@@ -2453,7 +2511,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   sidebarNavItemActive: {
-    borderColor: THEME.colors.primary,
+    backgroundColor: THEME.colors.accent,
+    borderColor: THEME.colors.accent,
   },
   sidebarNavItemPressed: {
     opacity: 0.92,
@@ -2463,12 +2522,21 @@ const styles = StyleSheet.create({
     color: THEME.colors.text,
     letterSpacing: 0.2,
   },
+  sidebarNavTextActive: {
+    color: THEME.colors.primary,
+  },
   sidebarActions: {
     marginTop: 'auto',
     gap: 10,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
+  },
+  sidebarActionGhostBtn: {
+    borderColor: THEME.colors.surface,
+  },
+  sidebarActionGhostText: {
+    color: THEME.colors.surface,
   },
   sidebarActionsMobile: {
     marginTop: 12,
