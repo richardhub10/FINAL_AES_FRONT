@@ -1340,8 +1340,6 @@ export default function App() {
                 </View>
               ) : (
                 <View style={styles.card}>
-                  <Text style={styles.sectionTitle}>Schedule</Text>
-
                   <Text style={styles.label}>Scheduled For</Text>
                   {!!earliestAvailableYmd && (
                     <Text style={styles.hint}>
@@ -1668,8 +1666,6 @@ export default function App() {
               ) : (
                 <>
                   <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Schedule</Text>
-
                     <StepHeader step={3} />
 
                     <Text style={styles.label}>Scheduled For</Text>
@@ -1837,11 +1833,31 @@ function Calendar({
   return (
     <View style={styles.calendarCard}>
       <View style={styles.calendarHeaderRow}>
-        <UiButton title="<" onPress={prevMonth} variant="ghost" style={styles.calendarNavBtn} />
-        <Text style={styles.calendarTitle}>
-          {monthName} {year}
-        </Text>
-        <UiButton title=">" onPress={nextMonth} variant="ghost" style={styles.calendarNavBtn} />
+        <Text style={styles.calendarTitle}>Schedule: {monthName} {year}</Text>
+        <View style={styles.calendarNavRow}>
+          <Pressable
+            onPress={prevMonth}
+            style={({ pressed }) => [
+              styles.calendarNavIconBtn,
+              pressed ? styles.calendarNavIconBtnPressed : null,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+          >
+            <Text style={styles.calendarNavIconText}>‹</Text>
+          </Pressable>
+          <Pressable
+            onPress={nextMonth}
+            style={({ pressed }) => [
+              styles.calendarNavIconBtn,
+              pressed ? styles.calendarNavIconBtnPressed : null,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+          >
+            <Text style={styles.calendarNavIconText}>›</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.calendarWeekdaysRow}>
@@ -1864,6 +1880,8 @@ function Calendar({
             const isSelected = ymd === selectedDateYmd;
             const weekend = isWeekend(ymd);
             const disabled = status === 'full' || weekend;
+            const showFullHighlight = status === 'full' && !weekend;
+            const showAvailableDot = status === 'available' && !weekend && !disabled && !isSelected;
 
             return (
               <Pressable
@@ -1872,33 +1890,36 @@ function Calendar({
                 onPress={() => onSelectDateYmd(ymd)}
                 style={({ pressed }) => [
                   styles.calendarDay,
-                  weekend
-                    ? styles.calendarDayWeekend
-                    : status === 'available'
-                      ? styles.calendarDayAvailable
-                      : styles.calendarDayFull,
+                  showFullHighlight ? styles.calendarDayFull : null,
                   isSelected ? styles.calendarDaySelected : null,
-                  disabled && !weekend ? styles.calendarDayDisabled : null,
-                  pressed ? styles.calendarDayPressed : null,
+                  disabled ? styles.calendarDayDisabled : null,
+                  pressed && !disabled ? styles.calendarDayPressed : null,
                 ]}
               >
-                <Text style={weekend ? styles.calendarDayWeekendText : styles.calendarDayText}>
-                  {cell.day}
-                </Text>
+                {showFullHighlight ? <View style={styles.calendarFullPill} /> : null}
+
+                {isSelected ? (
+                  <View style={styles.calendarSelectedCircle}>
+                    <Text style={styles.calendarSelectedText}>{cell.day}</Text>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.calendarDayText,
+                      weekend ? styles.calendarDayTextWeekend : null,
+                      showFullHighlight ? styles.calendarDayTextFull : null,
+                    ]}
+                  >
+                    {cell.day}
+                  </Text>
+                )}
+
+                {showAvailableDot ? <View style={styles.calendarDotAvailable} /> : null}
               </Pressable>
             );
           })}
         </View>
       ))}
-
-      <View style={styles.calendarLegendRow}>
-        <View style={[styles.legendChip, styles.legendAvailable]}>
-          <Text style={styles.legendText}>Available</Text>
-        </View>
-        <View style={[styles.legendChip, styles.legendFull]}>
-          <Text style={styles.legendText}>Fully Booked</Text>
-        </View>
-      </View>
     </View>
   );
 }
@@ -2850,29 +2871,52 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME.colors.border,
     borderRadius: THEME.radius.md,
-    padding: 10,
+    padding: 14,
     backgroundColor: THEME.colors.surface,
   },
   calendarHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  calendarNavBtn: {
-    minWidth: 42,
+    marginBottom: 10,
   },
   calendarTitle: {
-    fontWeight: '700',
+    fontWeight: '900',
     color: THEME.colors.text,
+    fontSize: 20,
+    letterSpacing: 0.2,
+  },
+  calendarNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  calendarNavIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarNavIconBtnPressed: {
+    opacity: 0.85,
+  },
+  calendarNavIconText: {
+    fontWeight: '900',
+    color: THEME.colors.text,
+    fontSize: 18,
+    marginTop: -1,
   },
   calendarWeekdaysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   calendarWeekday: {
-    width: 40,
+    width: 44,
     textAlign: 'center',
     color: THEME.colors.muted,
     fontWeight: '600',
@@ -2880,70 +2924,72 @@ const styles = StyleSheet.create({
   calendarWeekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   calendarDay: {
-    width: 40,
-    height: 36,
-    borderRadius: THEME.radius.sm,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
   },
   calendarDayEmpty: {
-    borderWidth: 0,
     backgroundColor: 'transparent',
   },
-  calendarDayAvailable: {
-    backgroundColor: THEME.colors.successBg,
-  },
   calendarDayFull: {
-    backgroundColor: THEME.colors.dangerBg,
+    backgroundColor: 'transparent',
   },
   calendarDaySelected: {
-    borderColor: THEME.colors.primary,
-    borderWidth: 2,
+    backgroundColor: 'transparent',
   },
   calendarDayPressed: {
     opacity: 0.8,
   },
   calendarDayDisabled: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
   calendarDayText: {
-    fontWeight: '700',
+    fontWeight: '800',
     color: THEME.colors.text,
   },
-  calendarDayWeekend: {
-    backgroundColor: 'transparent',
-  },
-  calendarDayWeekendText: {
-    fontWeight: '700',
+  calendarDayTextWeekend: {
+    fontWeight: '800',
     color: THEME.colors.muted,
   },
-  calendarLegendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  legendChip: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: THEME.radius.sm,
-    alignItems: 'center',
+  calendarFullPill: {
+    position: 'absolute',
+    left: 3,
+    right: 3,
+    top: 6,
+    bottom: 6,
+    borderRadius: 12,
+    backgroundColor: THEME.colors.dangerBg,
     borderWidth: 1,
     borderColor: THEME.colors.border,
   },
-  legendAvailable: {
-    backgroundColor: THEME.colors.successBg,
-    marginRight: 8,
-  },
-  legendFull: {
-    backgroundColor: THEME.colors.dangerBg,
-  },
-  legendText: {
-    fontWeight: '700',
+  calendarDayTextFull: {
     color: THEME.colors.text,
+  },
+  calendarSelectedCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: THEME.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarSelectedText: {
+    color: THEME.colors.primaryText,
+    fontWeight: '900',
+  },
+  calendarDotAvailable: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 4,
+    backgroundColor: THEME.colors.successText,
+    opacity: 0.85,
   },
 });
