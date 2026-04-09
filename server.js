@@ -119,11 +119,12 @@ function toPort(value) {
 }
 
 async function main() {
-  const primaryPort = toPort(process.env.PORT) || 8080;
+  const envPort = toPort(process.env.PORT);
+  const primaryPort = envPort || 3000;
   const extraPorts = new Set();
   extraPorts.add(primaryPort);
-  // Some Railway configurations route HTTP to 3000 even if PORT is different.
-  extraPorts.add(3000);
+  // Some platforms route HTTP to 8080 even if PORT isn't set.
+  extraPorts.add(8080);
 
   const ports = Array.from(extraPorts);
   const server = createStaticServer();
@@ -132,6 +133,7 @@ async function main() {
   await new Promise((resolve, reject) => {
     server.on('error', reject);
     server.listen(primaryPort, '0.0.0.0', () => {
+      console.log(`[static-server] PORT env: ${process.env.PORT || '(not set)'}`);
       console.log(`[static-server] Listening on 0.0.0.0:${primaryPort}`);
       resolve();
     });
