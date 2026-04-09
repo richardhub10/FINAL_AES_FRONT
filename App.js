@@ -2143,6 +2143,10 @@ const styles = StyleSheet.create({
   authBrandLogo: {
     width: 44,
     height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.bg,
   },
   authBrandLogoFallback: {
     width: 44,
@@ -2292,6 +2296,10 @@ const styles = StyleSheet.create({
   sidebarLogo: {
     width: 40,
     height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.bg,
   },
   sidebarLogoFallback: {
     width: 40,
