@@ -883,7 +883,7 @@ export default function App() {
                       <Text style={styles.authBrandLogoFallbackText}>UA</Text>
                     </View>
                   )}
-                  <View style={{ flex: 1 }}>
+                  <View style={styles.authBrandTextWrap}>
                     <Text style={styles.authBrandTitle}>University of the Assumption</Text>
                     <Text style={styles.authBrandSub}>University Clinic • Appointment System</Text>
                   </View>
@@ -2137,8 +2137,13 @@ const styles = StyleSheet.create({
   authBrandRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 12,
     marginBottom: 10,
+  },
+  authBrandTextWrap: {
+    alignItems: 'center',
+    flexShrink: 1,
   },
   authBrandLogo: {
     width: 44,
@@ -2168,12 +2173,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: THEME.colors.text,
     letterSpacing: 0.2,
+    textAlign: 'center',
   },
   authBrandSub: {
     marginTop: 2,
     color: THEME.colors.muted,
     fontWeight: '700',
     fontSize: 12,
+    textAlign: 'center',
   },
   authTabsRow: {
     flexDirection: 'row',
