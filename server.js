@@ -133,9 +133,11 @@ async function main() {
   // Listen on the primary port first; if 3000 differs, also listen on 3000 via a second server.
   await new Promise((resolve, reject) => {
     server.on('error', reject);
-    server.listen(primaryPort, '0.0.0.0', () => {
+    // Don't force IPv4-only binding; some platforms route to IPv6 internally.
+    server.listen(primaryPort, () => {
       console.log(`[static-server] PORT env: ${process.env.PORT || '(not set)'}`);
-      console.log(`[static-server] Listening on 0.0.0.0:${primaryPort}`);
+      const addr = server.address();
+      console.log(`[static-server] Listening on ${typeof addr === 'object' && addr ? `${addr.address}:${addr.port}` : String(addr)}`);
       resolve();
     });
   });
@@ -145,8 +147,11 @@ async function main() {
   const secondaryPorts = ports.filter((p) => p !== primaryPort);
   for (const p of secondaryPorts) {
     const s = createStaticServer();
-    s.listen(p, '0.0.0.0', () => {
-      console.log(`[static-server] Also listening on 0.0.0.0:${p}`);
+    s.listen(p, () => {
+      const addr = s.address();
+      console.log(
+        `[static-server] Also listening on ${typeof addr === 'object' && addr ? `${addr.address}:${addr.port}` : String(addr)}`
+      );
     });
   }
 }
