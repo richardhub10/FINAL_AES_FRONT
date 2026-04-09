@@ -824,6 +824,14 @@ export default function App() {
     setShowAccounts(true);
   };
 
+  const studentNavKey = showAppointments ? 'appointments' : 'home';
+  const goStudentHome = () => {
+    setShowAppointments(false);
+  };
+  const goStudentAppointments = () => {
+    setShowAppointments(true);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {!token ? (
@@ -1463,244 +1471,281 @@ export default function App() {
           </ScrollView>
         </View>
       ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.header}>
-            <View style={styles.brandBar}>
-              <View style={styles.brandLeft}>
-                {UA_LOGO_URI ? (
-                  <Image
-                    source={{ uri: UA_LOGO_URI }}
-                    style={styles.brandLogo}
-                    resizeMode="contain"
-                    accessibilityLabel="University of the Assumption logo"
-                  />
+        <View style={styles.staffShell}>
+          <View style={styles.sidebar}>
+            <View style={styles.sidebarBrandRow}>
+              {UA_LOGO_URI ? (
+                <Image
+                  source={{ uri: UA_LOGO_URI }}
+                  style={styles.sidebarLogo}
+                  resizeMode="contain"
+                  accessibilityLabel="University of the Assumption logo"
+                />
+              ) : (
+                <View style={styles.sidebarLogoFallback}>
+                  <Text style={styles.sidebarLogoFallbackText}>UA</Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sidebarTitle}>UA Clinic</Text>
+                <Text style={styles.sidebarSub}>Student Portal</Text>
+              </View>
+            </View>
+
+            <View style={styles.sidebarUserCard}>
+              <Text style={styles.sidebarUserName}>
+                {`${me?.first_name || ''} ${me?.last_name || ''}`.trim() || me?.email || 'Student'}
+              </Text>
+              <Text style={styles.sidebarUserMeta}>{me?.email || email || '—'}</Text>
+              <View style={styles.sidebarPillsRow}>
+                <View style={[styles.pill, styles.pillNeutral]}>
+                  <Text style={styles.pillText}>STUDENT</Text>
+                </View>
+                {studentNavKey === 'appointments' ? (
+                  <View style={[styles.pill, styles.pillNeutral]}>
+                    <Text style={styles.pillText}>APPOINTMENTS</Text>
+                  </View>
                 ) : (
-                  <View style={styles.brandLogoFallback}>
-                    <Text style={styles.brandLogoFallbackText}>UA</Text>
+                  <View style={[styles.pill, styles.pillNeutral]}>
+                    <Text style={styles.pillText}>SCHEDULE</Text>
                   </View>
                 )}
-                <View style={styles.brandTextWrap}>
-                  <Text style={styles.title}>University of the Assumption</Text>
-                  <Text style={styles.subtitle}>University Clinic • Appointment System</Text>
-                </View>
               </View>
+            </View>
+
+            <View style={styles.sidebarNav}>
+              <Pressable
+                onPress={goStudentHome}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.sidebarNavItem,
+                  studentNavKey === 'home' ? styles.sidebarNavItemActive : null,
+                  pressed ? styles.sidebarNavItemPressed : null,
+                ]}
+              >
+                <Text style={styles.sidebarNavText}>Home</Text>
+              </Pressable>
+              <Pressable
+                onPress={goStudentAppointments}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.sidebarNavItem,
+                  studentNavKey === 'appointments' ? styles.sidebarNavItemActive : null,
+                  pressed ? styles.sidebarNavItemPressed : null,
+                ]}
+              >
+                <Text style={styles.sidebarNavText}>My Appointments</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.sidebarActions}>
+              <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
+              <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
             </View>
           </View>
 
-          {!!error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <FadeSlideIn key={screenKey} style={styles.screenWrap}>
-            <View style={styles.topBar}>
-              <UiButton title="Refresh" onPress={fetchAppointments} disabled={busy} variant="secondary" />
-              <UiButton
-                title={showAppointments ? 'Create' : 'My Appointments'}
-                onPress={() => {
-                  setShowAccounts(false);
-                  setShowAppointments((v) => !v);
-                }}
-                disabled={busy}
-                variant="primary"
-              />
-              <UiButton title="Logout" onPress={logout} disabled={busy} variant="ghost" />
-            </View>
-
-            {!showAccounts ? <AccountDetails me={me} emailFallback={email} /> : null}
-
-            {!!token && !me ? (
-              <View style={styles.card}>
-                <Text style={styles.hint}>Loading account…</Text>
+          <ScrollView
+            style={styles.staffScroll}
+            contentContainerStyle={styles.staffContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {!!error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
               </View>
-            ) : showAppointments ? (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>My Appointments</Text>
-                <FlatList
-                  data={appointments}
-                  scrollEnabled={false}
-                  keyExtractor={(item) => String(item.id)}
-                  ListEmptyComponent={<Text style={styles.hint}>No appointments yet.</Text>}
-                  renderItem={({ item }) => (
-                    <View style={styles.item}>
-                      <View style={styles.itemHeaderRow}>
-                        <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
-                        <View
-                          style={[
-                            styles.pill,
-                            String(item.status || '').toLowerCase() === 'confirmed'
-                              ? styles.pillSuccess
-                              : String(item.status || '').toLowerCase() === 'cancelled'
-                                ? styles.pillDanger
-                                : styles.pillNeutral,
-                          ]}
-                        >
-                          <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
+            )}
+
+            <FadeSlideIn key={screenKey} style={styles.screenWrap}>
+              {!showAccounts ? <AccountDetails me={me} emailFallback={email} /> : null}
+
+              {!!token && !me ? (
+                <View style={styles.card}>
+                  <Text style={styles.hint}>Loading account…</Text>
+                </View>
+              ) : showAppointments ? (
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>My Appointments</Text>
+                  <FlatList
+                    data={appointments}
+                    scrollEnabled={false}
+                    keyExtractor={(item) => String(item.id)}
+                    ListEmptyComponent={<Text style={styles.hint}>No appointments yet.</Text>}
+                    renderItem={({ item }) => (
+                      <View style={styles.item}>
+                        <View style={styles.itemHeaderRow}>
+                          <Text style={styles.itemTitle}>{String(item.status || '').toUpperCase()}</Text>
+                          <View
+                            style={[
+                              styles.pill,
+                              String(item.status || '').toLowerCase() === 'confirmed'
+                                ? styles.pillSuccess
+                                : String(item.status || '').toLowerCase() === 'cancelled'
+                                  ? styles.pillDanger
+                                  : styles.pillNeutral,
+                            ]}
+                          >
+                            <Text style={styles.pillText}>{String(item.status || '').toUpperCase()}</Text>
+                          </View>
                         </View>
-                      </View>
-                      <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
+                        <Text style={styles.itemMeta}>{item.scheduled_for}</Text>
 
-                      {(() => {
-                        const dec = decryptedById.get(item.id);
-                        const reasonText = dec ? dec.reason : item.reason;
-                        const notesText = dec ? dec.notes : item.notes;
-                        const isConfirmed = String(item.status || '').toLowerCase() === 'confirmed';
+                        {(() => {
+                          const dec = decryptedById.get(item.id);
+                          const reasonText = dec ? dec.reason : item.reason;
+                          const notesText = dec ? dec.notes : item.notes;
+                          const isConfirmed = String(item.status || '').toLowerCase() === 'confirmed';
 
-                        return (
-                          <>
-                            {!!reasonText && (
-                              <Text style={styles.itemBody}>
-                                Reason: {reasonText}
-                                {!dec ? ' (encrypted)' : ''}
-                              </Text>
-                            )}
-                            {!!notesText && (
-                              <Text style={styles.itemBody}>
-                                Notes: {notesText}
-                                {!dec ? ' (encrypted)' : ''}
-                              </Text>
-                            )}
+                          return (
+                            <>
+                              {!!reasonText && (
+                                <Text style={styles.itemBody}>
+                                  Reason: {reasonText}
+                                  {!dec ? ' (encrypted)' : ''}
+                                </Text>
+                              )}
+                              {!!notesText && (
+                                <Text style={styles.itemBody}>
+                                  Notes: {notesText}
+                                  {!dec ? ' (encrypted)' : ''}
+                                </Text>
+                              )}
 
-                            <View style={styles.actionRow}>
-                              <View style={styles.actionBtn}>
-                                {!dec ? (
+                              <View style={styles.actionRow}>
+                                <View style={styles.actionBtn}>
+                                  {!dec ? (
+                                    <UiButton
+                                      title="Decrypt"
+                                      onPress={() => decryptAppointment(item.id)}
+                                      disabled={busy}
+                                      variant="secondary"
+                                    />
+                                  ) : (
+                                    <UiButton
+                                      title="Hide"
+                                      onPress={() => hideDecrypted(item.id)}
+                                      disabled={busy}
+                                      variant="ghost"
+                                    />
+                                  )}
+                                </View>
+
+                                {isConfirmed ? (
+                                  <View style={styles.actionBtn}>
+                                    <UiButton
+                                      title="Ticket"
+                                      onPress={() => downloadStickerForAppointment(item)}
+                                      disabled={busy}
+                                      variant="primary"
+                                    />
+                                  </View>
+                                ) : null}
+
+                                <View style={styles.actionBtn}>
                                   <UiButton
-                                    title="Decrypt"
-                                    onPress={() => decryptAppointment(item.id)}
+                                    title="Cancel"
+                                    onPress={() => setAppointmentStatus(item.id, 'cancelled')}
                                     disabled={busy}
                                     variant="secondary"
                                   />
-                                ) : (
-                                  <UiButton
-                                    title="Hide"
-                                    onPress={() => hideDecrypted(item.id)}
-                                    disabled={busy}
-                                    variant="ghost"
-                                  />
-                                )}
-                              </View>
-
-                              {isConfirmed ? (
-                                <View style={styles.actionBtn}>
-                                  <UiButton
-                                    title="Ticket"
-                                    onPress={() => downloadStickerForAppointment(item)}
-                                    disabled={busy}
-                                    variant="primary"
-                                  />
                                 </View>
-                              ) : null}
-
-                              <View style={styles.actionBtn}>
-                                <UiButton
-                                  title="Cancel"
-                                  onPress={() => setAppointmentStatus(item.id, 'cancelled')}
-                                  disabled={busy}
-                                  variant="secondary"
-                                />
                               </View>
-                            </View>
-                          </>
-                        );
-                      })()}
-                    </View>
-                  )}
-                />
-              </View>
-            ) : (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Create Appointment</Text>
+                            </>
+                          );
+                        })()}
+                      </View>
+                    )}
+                  />
+                </View>
+              ) : (
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>Create Appointment</Text>
 
-                <View style={styles.sectionBlock}>
-                  <View style={styles.sectionHeaderRow}>
-                    <Text style={styles.sectionBlockTitle}>Schedule</Text>
-                    <View style={styles.selectedChip}>
-                      <Text style={styles.selectedChipText}>
-                        {selectedDateYmd} • {selectedTime} UTC
-                      </Text>
+                  <View style={styles.sectionBlock}>
+                    <View style={styles.sectionHeaderRow}>
+                      <Text style={styles.sectionBlockTitle}>Schedule</Text>
+                      <View style={styles.selectedChip}>
+                        <Text style={styles.selectedChipText}>
+                          {selectedDateYmd} • {selectedTime} UTC
+                        </Text>
+                      </View>
                     </View>
+
+                    {!!earliestAvailableYmd && (
+                      <Text style={styles.hint}>
+                        Earliest available appointment: {earliestAvailableYmd}
+                      </Text>
+                    )}
+
+                    <Calendar
+                      cursor={calendarCursor}
+                      onChangeCursor={setCalendarCursor}
+                      selectedDateYmd={selectedDateYmd}
+                      onSelectDateYmd={setSelectedDateYmd}
+                      bookedCountByDate={bookedCountByDate}
+                      dailyCapacity={DAILY_CAPACITY}
+                    />
+
+                    <Field label="Time (UTC)">
+                      <View style={styles.pickerWrap}>
+                        <Picker
+                          enabled={!busy}
+                          selectedValue={selectedTime}
+                          onValueChange={(v) => setSelectedTime(String(v))}
+                          style={styles.picker}
+                        >
+                          {timeOptionsWithAvailability.map((opt) => (
+                            <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                          ))}
+                        </Picker>
+                      </View>
+                      <Text style={styles.hint}>Selected: {selectedDateYmd} {selectedTime}</Text>
+                      <Text style={styles.hint}>
+                        Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
+                      </Text>
+                    </Field>
                   </View>
 
-                  {!!earliestAvailableYmd && (
-                    <Text style={styles.hint}>
-                      Earliest available appointment: {earliestAvailableYmd}
-                    </Text>
-                  )}
+                  <View style={styles.sectionBlock}>
+                    <Text style={styles.sectionBlockTitle}>Details</Text>
 
-                  <Calendar
-                    cursor={calendarCursor}
-                    onChangeCursor={setCalendarCursor}
-                    selectedDateYmd={selectedDateYmd}
-                    onSelectDateYmd={setSelectedDateYmd}
-                    bookedCountByDate={bookedCountByDate}
-                    dailyCapacity={DAILY_CAPACITY}
+                    <Field label="Reason" hint="Visible only after decrypt (owner/staff).">
+                      <TextInput
+                        value={reason}
+                        onChangeText={setReason}
+                        style={[styles.input, styles.textarea]}
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                        placeholder="Enter reason for visit"
+                        placeholderTextColor={THEME.colors.muted}
+                      />
+                    </Field>
+
+                    <Field label="Notes" hint="Optional additional information.">
+                      <TextInput
+                        value={notes}
+                        onChangeText={setNotes}
+                        style={[styles.input, styles.textarea]}
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                        placeholder="Enter notes (optional)"
+                        placeholderTextColor={THEME.colors.muted}
+                      />
+                    </Field>
+                  </View>
+
+                  <UiButton
+                    title="Create"
+                    onPress={createAppointment}
+                    disabled={busy || !scheduledForIso || isWeekendYmd(selectedDateYmd) || selectedHourSlotsLeft <= 0}
+                    variant="primary"
                   />
-
-                  <Field label="Time (UTC)">
-                    <View style={styles.pickerWrap}>
-                      <Picker
-                        enabled={!busy}
-                        selectedValue={selectedTime}
-                        onValueChange={(v) => setSelectedTime(String(v))}
-                        style={styles.picker}
-                      >
-                        {timeOptionsWithAvailability.map((opt) => (
-                          <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-                        ))}
-                      </Picker>
-                    </View>
-                    <Text style={styles.hint}>Selected: {selectedDateYmd} {selectedTime}</Text>
-                    <Text style={styles.hint}>
-                      Status: {selectedHourSlotsLeft > 0 ? 'Available' : 'Not available'} ({selectedHourUsed}/{HOURLY_CAPACITY})
-                    </Text>
-                  </Field>
                 </View>
-
-                <View style={styles.sectionBlock}>
-                  <Text style={styles.sectionBlockTitle}>Details</Text>
-
-                  <Field label="Reason" hint="Visible only after decrypt (owner/staff).">
-                    <TextInput
-                      value={reason}
-                      onChangeText={setReason}
-                      style={[styles.input, styles.textarea]}
-                      multiline
-                      numberOfLines={3}
-                      textAlignVertical="top"
-                      placeholder="Enter reason for visit"
-                      placeholderTextColor={THEME.colors.muted}
-                    />
-                  </Field>
-
-                  <Field label="Notes" hint="Optional additional information.">
-                    <TextInput
-                      value={notes}
-                      onChangeText={setNotes}
-                      style={[styles.input, styles.textarea]}
-                      multiline
-                      numberOfLines={4}
-                      textAlignVertical="top"
-                      placeholder="Enter notes (optional)"
-                      placeholderTextColor={THEME.colors.muted}
-                    />
-                  </Field>
-                </View>
-
-                <UiButton
-                  title="Create"
-                  onPress={createAppointment}
-                  disabled={busy || !scheduledForIso || isWeekendYmd(selectedDateYmd) || selectedHourSlotsLeft <= 0}
-                  variant="primary"
-                />
-              </View>
-            )}
-          </FadeSlideIn>
-        </ScrollView>
+              )}
+            </FadeSlideIn>
+          </ScrollView>
+        </View>
       )}
 
       <StatusBar style="auto" />
