@@ -366,6 +366,9 @@ export default function App() {
   const apptStatusByIdRef = useRef(new Map());
   const apptStatusInitializedRef = useRef(false);
 
+  const [availabilityByDate, setAvailabilityByDate] = useState(() => new Map());
+  const [availabilityBySlot, setAvailabilityBySlot] = useState(() => new Map());
+
   // --- Auth/UI mode state -------------------------------------------------
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [showAppointments, setShowAppointments] = useState(false);
@@ -453,6 +456,18 @@ export default function App() {
     return map;
   }, [staffConfirmedAppointments]);
 
+  const confirmedCountByYmdHourGlobal = useMemo(() => {
+    // For students, `appointments` is filtered to their own; use availability endpoint.
+    if (me?.is_staff) return confirmedCountByYmdHour;
+    return availabilityBySlot;
+  }, [me?.is_staff, confirmedCountByYmdHour, availabilityBySlot]);
+
+  const bookedCountByDateGlobal = useMemo(() => {
+    // Calendar/day availability should reflect global confirmed counts.
+    if (me?.is_staff) return bookedCountByDateConfirmed;
+    return availabilityByDate;
+  }, [me?.is_staff, bookedCountByDateConfirmed, availabilityByDate]);
+
   const staffInboxAppointments = useMemo(() => {
     // Staff "Appointments" view acts like an inbox: pending/cancelled only.
     // Confirmed appointments move to the calendar view.
@@ -496,9 +511,9 @@ export default function App() {
 
   const selectedHourSlotsLeft = useMemo(() => {
     const key = `${selectedDateYmd} ${selectedTime}`;
-    const used = confirmedCountByYmdHour.get(key) || 0;
+    const used = confirmedCountByYmdHourGlobal.get(key) || 0;
     return Math.max(0, HOURLY_CAPACITY - used);
-  }, [confirmedCountByYmdHour, selectedDateYmd, selectedTime, HOURLY_CAPACITY]);
+  }, [confirmedCountByYmdHourGlobal, selectedDateYmd, selectedTime, HOURLY_CAPACITY]);
 
   const selectedHourUsed = useMemo(() => {
     return Math.max(0, HOURLY_CAPACITY - selectedHourSlotsLeft);
@@ -507,7 +522,7 @@ export default function App() {
   const timeOptionsWithAvailability = useMemo(() => {
     return (timeOptions || []).map((opt) => {
       const key = `${selectedDateYmd} ${opt.value}`;
-      const used = confirmedCountByYmdHour.get(key) || 0;
+      const used = confirmedCountByYmdHourGlobal.get(key) || 0;
       const left = Math.max(0, HOURLY_CAPACITY - used);
       const status = left > 0 ? 'Available' : 'Not available';
       return {
@@ -515,14 +530,14 @@ export default function App() {
         label: `${opt.label} — ${status}`,
       };
     });
-  }, [timeOptions, selectedDateYmd, confirmedCountByYmdHour, HOURLY_CAPACITY]);
+  }, [timeOptions, selectedDateYmd, confirmedCountByYmdHourGlobal, HOURLY_CAPACITY]);
 
   function slotsLeftForIso(iso) {
     if (!iso || typeof iso !== 'string' || iso.length < 16) return HOURLY_CAPACITY;
     const ymd = iso.slice(0, 10);
     const hhmm = iso.slice(11, 16);
     const key = `${ymd} ${hhmm}`;
-    const used = confirmedCountByYmdHour.get(key) || 0;
+    const used = confirmedCountByYmdHourGlobal.get(key) || 0;
     return Math.max(0, HOURLY_CAPACITY - used);
   }
 
@@ -537,11 +552,11 @@ export default function App() {
       // No appointments on weekends.
       if (isWeekendYmd(ymd)) continue;
 
-      const count = bookedCountByDate.get(ymd) || 0;
+      const count = bookedCountByDateGlobal.get(ymd) || 0;
       if (count < DAILY_CAPACITY) return ymd;
     }
     return '';
-  }, [bookedCountByDate, DAILY_CAPACITY]);
+  }, [bookedCountByDateGlobal, DAILY_CAPACITY]);
 
   const api = useMemo(() => {
     // Axios instance for the backend API.
@@ -560,6 +575,48 @@ export default function App() {
 
     return instance;
   }, [token]);
+
+  function getMonthRangeFromCursor(cursor) {
+    const c = cursor instanceof Date ? cursor : new Date();
+    const year = c.getUTCFullYear();
+    const month = c.getUTCMonth();
+    const start = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+    const end = new Date(Date.UTC(year, month + 1, 0, 0, 0, 0));
+    const startYmd = start.toISOString().slice(0, 10);
+    const endYmd = end.toISOString().slice(0, 10);
+    return { startYmd, endYmd };
+  }
+
+  async function fetchAvailability(options) {
+    if (!token) return;
+    const silent = !!options?.silent;
+    const cursor = options?.cursor || calendarCursor;
+    const range = getMonthRangeFromCursor(cursor);
+
+    try {
+      const res = await api.get('/api/availability/', {
+        params: { start: range.startYmd, end: range.endYmd },
+      });
+      const byDateRaw = res?.data?.confirmed_by_date || {};
+      const bySlotRaw = res?.data?.confirmed_by_slot || {};
+
+      const byDate = new Map();
+      const bySlot = new Map();
+      for (const [k, v] of Object.entries(byDateRaw)) {
+        byDate.set(String(k), Number(v) || 0);
+      }
+      for (const [k, v] of Object.entries(bySlotRaw)) {
+        bySlot.set(String(k), Number(v) || 0);
+      }
+      setAvailabilityByDate(byDate);
+      setAvailabilityBySlot(bySlot);
+    } catch (e) {
+      if (!silent) {
+        // Non-fatal: UI can still function; availability will just be less accurate.
+        setError(getErrorMessage(e));
+      }
+    }
+  }
 
   async function onRegister() {
     // Create a new user account (patient/student).
@@ -884,8 +941,16 @@ export default function App() {
   useEffect(() => {
     fetchMe();
     fetchAppointments();
+    fetchAvailability({ silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    // Refresh month availability when user navigates calendar months.
+    fetchAvailability({ silent: true, cursor: calendarCursor });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, calendarCursor]);
 
   useEffect(() => {
     // Student auto-refresh (polling) to reflect admin approvals in real time.
@@ -896,6 +961,7 @@ export default function App() {
     const intervalMs = 15000;
     const id = setInterval(() => {
       fetchAppointments({ silent: true, notifyApproved: true });
+      fetchAvailability({ silent: true });
     }, intervalMs);
 
     return () => clearInterval(id);
@@ -1848,7 +1914,7 @@ export default function App() {
                       onChangeCursor={setCalendarCursor}
                       selectedDateYmd={selectedDateYmd}
                       onSelectDateYmd={setSelectedDateYmd}
-                      bookedCountByDate={bookedCountByDate}
+                      bookedCountByDate={bookedCountByDateGlobal}
                       dailyCapacity={DAILY_CAPACITY}
                     />
 
