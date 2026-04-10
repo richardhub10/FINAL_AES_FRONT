@@ -462,12 +462,6 @@ export default function App() {
     return availabilityBySlot;
   }, [me?.is_staff, confirmedCountByYmdHour, availabilityBySlot]);
 
-  const bookedCountByDateGlobal = useMemo(() => {
-    // Calendar/day availability should reflect global confirmed counts.
-    if (me?.is_staff) return bookedCountByDateConfirmed;
-    return availabilityByDate;
-  }, [me?.is_staff, bookedCountByDateConfirmed, availabilityByDate]);
-
   const staffInboxAppointments = useMemo(() => {
     // Staff "Appointments" view acts like an inbox: pending/cancelled only.
     // Confirmed appointments move to the calendar view.
@@ -486,6 +480,12 @@ export default function App() {
     }
     return map;
   }, [staffConfirmedAppointments]);
+
+  const bookedCountByDateGlobal = useMemo(() => {
+    // Calendar/day availability should reflect global confirmed counts.
+    if (me?.is_staff) return bookedCountByDateConfirmed;
+    return availabilityByDate;
+  }, [me?.is_staff, bookedCountByDateConfirmed, availabilityByDate]);
 
   const staffAppointmentsForSelectedDate = useMemo(() => {
     const ymd = selectedDateYmd;
