@@ -820,7 +820,12 @@ export default function App() {
     if (notifyApproved && approvals.length > 0) {
       const first = approvals[0];
       const when = typeof first?.scheduled_for === 'string' ? first.scheduled_for : '';
-      showPopup('Appointment approved', when ? `Your appointment was approved.\n\nSchedule: ${when}` : 'Your appointment was approved.');
+      showPopup(
+        'Appointment approved',
+        when
+          ? `Your appointment was approved.\n\nSchedule: ${formatIsoForSticker(when)}`
+          : 'Your appointment was approved.',
+      );
     }
   }
 
