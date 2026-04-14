@@ -554,9 +554,14 @@ export default function App() {
 
   const staffAppointmentsForSelectedDate = useMemo(() => {
     const ymd = selectedDateYmd;
+    const hhmm = selectedTime;
     const items = staffConfirmedAppointments.filter((appt) => {
       const iso = typeof appt?.scheduled_for === 'string' ? appt.scheduled_for : '';
-      return getPhtPartsFromIso(iso).ymd === ymd;
+      const parts = getPhtPartsFromIso(iso);
+      if (parts.ymd !== ymd) return false;
+      // If a time slot is selected, show only that hour.
+      if (hhmm) return parts.hhmm === hhmm;
+      return true;
     });
     items.sort((a, b) => {
       const aIso = typeof a?.scheduled_for === 'string' ? a.scheduled_for : '';
@@ -566,7 +571,7 @@ export default function App() {
       return String(aKey).localeCompare(String(bKey));
     });
     return items;
-  }, [staffConfirmedAppointments, selectedDateYmd]);
+  }, [staffConfirmedAppointments, selectedDateYmd, selectedTime]);
 
   const myAppointmentsForSelectedDate = useMemo(() => {
     const ymd = selectedDateYmd;
@@ -1679,7 +1684,7 @@ export default function App() {
                   </Text>
 
                   <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
-                    Appointments on {selectedDateYmd}
+                    Appointments on {selectedDateYmd} at {formatTimeLabel(selectedTime)}
                   </Text>
                   <FlatList
                     data={staffConfirmedAppointmentsForSelectedDate}
